@@ -19,13 +19,14 @@ class PersonalAssistant:
         with open(self.storage_path, 'w') as file:
             json.dump(self.contacts, file, indent=2)
 
-    def add_contact(self, name, address, phone, email, birthday):
+    def add_contact(self, name, address, phone, email, birthday, note):
         contact = {
             'Name': name,
             'Address': address,
             'Phone': phone,
             'Email': email,
-            'Birthday': birthday
+            'Birthday': birthday,
+            'Note': note
         }
         self.contacts[name] = contact
         self.save_contacts()
@@ -42,6 +43,7 @@ class PersonalAssistant:
                 print(f"Телефон: {details['Phone']}")
                 print(f"Email: {details['Email']}")
                 print(f"День народження: {details['Birthday']}")
+                print(f"Нотатка: {details['Note']}")
                 print("-" * 30)
 
 
@@ -62,7 +64,8 @@ if __name__ == "__main__":
             phone = input("Введіть номер телефону: ")
             email = input("Введіть email: ")
             birthday = input("Введіть день народження: ")
-            assistant.add_contact(name, address, phone, email, birthday)
+            note = input("Введіть нотатку: ")
+            assistant.add_contact(name, address, phone, email, birthday, note)
 
         elif choice == '2':
             assistant.display_contacts()
