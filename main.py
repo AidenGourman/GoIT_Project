@@ -174,6 +174,19 @@ class Assistant:
         else:
             raise KeyError
 
+    # метод для редагування нотаток        
+    def edit_note(self, name, old_note, new_note):
+        record = self.contacts.find(name)
+        if record:
+            try:
+                record.edit_note(old_note, new_note)
+                self.contacts.save_data()
+                return f"Note edited for {name}: '{old_note}' changed to '{new_note}'."
+            except ValueError as e:
+                return str(e)  # обробка помилки, якщо нотатка не знайдена
+        else:
+            raise KeyError
+
     # метод для перегляду нотаток
     def view_notes(self, name):
         record = self.contacts.find(name)
