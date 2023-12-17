@@ -1,6 +1,10 @@
-import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import UserDict
+import json
+import os
+import pickle
+import re
+
 
 class Field:                                        #parrent 
     def __init__(self, value=None):
@@ -54,10 +58,100 @@ class Email(Field):
         else:
             raise ValueError("Email is not valid")
 
-class Note:
-    pass
-class Address:
-    pass
+class Note(Field):
+    def __init__(self, value, tags=None):
+        super().__init__(value)
+        self.tags = tags or []
+
+    def add_tag(self, tag):
+        self.tags.append(tag)
+
+    def remove_tag(self, tag):
+        if tag in self.tags:
+            self.tags.remove(tag)
+        else:
+            raise ValueError(f"Tag {tag} not found.")
+
+    def has_tag(self, tag):
+        return tag in self.tags
+
+    # методи для роботи з нотатками
+    def add_note(self, note_value, tags=None):
+        note = Note(note_value, tags)
+        self.notes.append(note)
+
+    def edit_note(self, old_note, new_note):
+        for note in self.notes:
+            if isinstance(note, Note) and note.value == old_note:
+                note.value = new_note
+                return
+        raise ValueError(f"Note {old_note} not found.")
+
+    def remove_note(self, note):
+        for n in self.notes:
+            if isinstance(n, Note) and n.value == note:
+                self.notes.remove(n)
+                return
+        raise ValueError(f"Note {note} not found.")
+
+    def add_tag_to_note(self, note_value, tag):
+        note = next((note for note in self.notes if note.value == note_value), None)
+        if note:
+            note.add_tag(tag)
+        else:
+            raise ValueError(f"Note {note_value} not found.")
+
+    def remove_tag_from_note(self, note_value, tag):
+        note = next((note for note in self.notes if note.value == note_value), None)
+        if note:
+            note.remove_tag(tag)
+        else:
+            raise ValueError(f"Note {note_value} not found.")
+
+    def search_notes_by_tag(self, tag):
+        return [note for note in self.notes if note.has_tag(tag)]
+
+# Клас AddressBook
+class Address(UserDict):
+    def __init__(self, file_path="address_book.pkl"):
+        super().__init__()
+        self.file_path = file_path
+        self.load_data()
+
+    def load_data(self):
+        try:
+            with open(self.file_path, 'rb') as file:
+                self.data = pickle.load(file)
+        except FileNotFoundError:
+            pass
+
+    def save_data(self):
+        with open(self.file_path, 'wb') as file:
+            pickle.dump(self.data, file)
+
+    def add_record(self, record):
+        self.data[record.name.value] = record
+        self.save_data()
+
+    def delete(self, name):
+        if name in self.data:
+            del self.data[name]
+            self.save_data()
+
+    def find(self, query):
+        found_records = []
+        for record in self.data.values():
+            if query.lower() in record.name.value.lower():
+                found_records.append(record)
+            for phone in record.phones:
+                if query in phone.value:
+                    found_records.append(record)
+        return found_records
+
+    def iterator(self, chunk_size=5):
+        records = list(self.data.values())
+        for i in range(0, len(records), chunk_size):
+            yield records[i:i + chunk_size]
 
 class Record: 
     def __init__(self, name, phone, birthday, email, address=None, note=None) -> None:
@@ -122,11 +216,6 @@ class Record:
     
     def __str__(self) -> str: # readable view
         return f"contact name:{self.name.value}, phones:{'; '.join(i.value for i in self.phones)}, birthday:{self.birthday.value}, email:{self.email.value}, address:{self.address.value if self.address.value is not None else 'N/A'}, note:{'; '.join(i.value for i in self.notes) if self.note.value is not None else 'N/A'}"
-    
-=======
-import json
-import os
-
 
 class PersonalAssistant:
     def __init__(self, storage_path='contacts.json'):
