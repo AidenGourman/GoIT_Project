@@ -83,6 +83,9 @@ class Record:
         self.notes = []
         self.emails = []
 
+    def is_valid_name(self, name):
+        return all(char.isalpha() or char.isspace() for char in name)
+
     def is_valid_email(self, email):
         email_regex = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
         return bool(email_regex.match(email))
