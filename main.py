@@ -1,62 +1,62 @@
 from datetime import datetime, timedelta
 from collections import UserDict
+import json
+import os
 import pickle
 import re
 
-# Клас Field для представлення загальних полів
-class Field:
-    def __init__(self, value):
-        self._value = value
-
-    @property
+class Field:                                        #parrent 
+    def __init__(self, value=None):
+        self.__value = None
+        self.value = value
+    
+    @property                                       #getter
     def value(self):
-        return self._value
+        return self.__value
+    
+    @value.setter                                   #setter
+    def value(self, value):
+        self.__value = value
+    
+    def __repr__(self):                             #get readable form
+        return f"{self.__class__.__name__}({self.value})"
 
-    @value.setter
-    def value(self, new_value):
-        self._value = new_value
-
-# Клас Name для представлення імен
 class Name(Field):
-    pass
-
-# Клас Phone для представлення номерів телефонів
-class Phone(Field):
-    def __init__(self, value):
-        if not self.is_valid(value):
-            raise ValueError("Invalid phone number")
-        super().__init__(value)
-
-    def is_valid(self, number):
-        return len(number) == 10 and number.isdigit()
-
     @Field.value.setter
-    def value(self, new_value):
-        if not self.is_valid(new_value):
-            raise ValueError("Invalid phone number")
-        self._value = new_value
+    def value(self, value:str):
+        if not(re.findall(r'[^a-zA-Z\s]', value)): # check if name is valid: [value.isalpha\s]
+            self._Field__value = value
+        else:
+            raise ValueError('Name should include only letter character')
 
-# Клас Birthday для представлення днів народження
 class Birthday(Field):
-    def __init__(self, value):
-        if not self.is_valid(value):
-            raise ValueError("Invalid birthday")
-        super().__init__(value)
-
-    def is_valid(self, date):
-        try:
-            datetime.strptime(date, "%Y-%m-%d")
-            return True
-        except ValueError:
-            return False
-
     @Field.value.setter
-    def value(self, new_value):
-        if not self.is_valid(new_value):
-            raise ValueError("Invalid birthday")
-        self._value = new_value
+    def value(self, value=None):
+        if value:
+            try:                                       
+                self._Field__value = datetime.strptime(value, '%Y-%m-%d').date() 
+            except Exception:
+                raise ValueError("Date should be in the format YYYY-MM-DD") # add info about format of the date
 
-# Клас Note для представлення текстових нотаток
+class Phone(Field): 
+    @Field.value.setter
+    def value(self, value):
+        phone_pattern_ua = re.compile(r"^0[3456789]\d{8}$") # format UA mobile_operators,10 numbers and only digits,first 0
+        if phone_pattern_ua.match(value):
+            self._Field__value = value
+        else:
+            raise ValueError('Phone is not valid')
+
+class Email(Field):   
+    @Field.value.setter
+    def value(self, value):
+        email_pattern = re.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$") # check if correct input for email
+        #(one char@letters_digit_dot_hyphen_from_1_char.domain_only_letters_from_2_chars)
+        if email_pattern.match(value):
+            self._Field__value = value
+        else:
+            raise ValueError("Email is not valid")
+
 class Note(Field):
     def __init__(self, value, tags=None):
         super().__init__(value)
@@ -73,44 +73,6 @@ class Note(Field):
 
     def has_tag(self, tag):
         return tag in self.tags
-
-# Розширення класу Record (для додавання нотаток)
-class Record:
-    def __init__(self, name, birthday=None):
-        self.name = Name(name)
-        self.phones = []
-        self.birthday = Birthday(birthday) if birthday else None
-        self.notes = []
-        self.emails = []
-
-    def is_valid_name(self, name):
-        return all(char.isalpha() or char.isspace() for char in name)
-
-    def is_valid_email(self, email):
-        email_regex = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
-        return bool(email_regex.match(email))
-
-    def add_email(self, email):
-        if self.is_valid_email(email):
-            self.emails.append(email)
-        else:
-            raise ValueError("Invalid email format")
-
-    def edit_email(self, old_email, new_email):
-        if self.is_valid_email(new_email):
-            if old_email in self.emails:
-                index = self.emails.index(old_email)
-                self.emails[index] = new_email
-            else:
-                raise ValueError(f"Email {old_email} not found.")
-        else:
-            raise ValueError("Invalid email format")
-
-    def remove_email(self, email):
-        if email in self.emails:
-            self.emails.remove(email)
-        else:
-            raise ValueError(f"Email {email} not found.")
 
     # методи для роботи з нотатками
     def add_note(self, note_value, tags=None):
@@ -148,8 +110,8 @@ class Record:
     def search_notes_by_tag(self, tag):
         return [note for note in self.notes if note.has_tag(tag)]
 
-# Клас AddressBook для представлення книги адрес
-class AddressBook(UserDict):
+# Клас AddressBook
+class Address(UserDict):
     def __init__(self, file_path="address_book.pkl"):
         super().__init__()
         self.file_path = file_path
@@ -190,78 +152,140 @@ class AddressBook(UserDict):
         for i in range(0, len(records), chunk_size):
             yield records[i:i + chunk_size]
 
-# Клас Assistant для управління контактами та взаємодією з користувачем
-class Assistant:
-    def __init__(self):
-        self.contacts = AddressBook()
+class Record: 
+    def __init__(self, name, phone, birthday, email, address=None, note=None) -> None:
+        self.name = Name(name)
+        self.birthday = Birthday(birthday)
+        self.phone = Phone(phone) if phone else None
+        self.phones = [self.phone] if phone else [] 
+        self.email = Email(email)
+        self.address = Address(address)
+        self.note = Note(note)         
+        self.notes = [self.note] if note else []  
 
-    # метод для додавання нотаток (до контакту)
-    def add_note_to_contact(self, name, note):
-        record = self.contacts.find(name)
-        if record:
-            record.add_note(note)
-            self.contacts.save_data()
-            return f"Note added to {name}: {note}."
-        else:
-            raise KeyError
+    def add_phone(self, phone_number:str): # adding phone
+        phone = Phone(phone_number)  
+        if phone not in self.phones: 
+            self.phones.append(phone) 
 
-    # метод для редагування нотаток        
-    def edit_note(self, name, old_note, new_note):
-        record = self.contacts.find(name)
-        if record:
-            try:
-                record.edit_note(old_note, new_note)
-                self.contacts.save_data()
-                return f"Note edited for {name}: '{old_note}' changed to '{new_note}'."
-            except ValueError as e:
-                return str(e)  # обробка помилки, якщо нотатка не знайдена
-        else:
-            raise KeyError
+    def remove_phone(self, phone_number:str):  #delete phone
+        phone = Phone(phone_number)
+        for i in self.phones:
+         if phone.value == i.value:
+            self.phones.remove(i)
+            return "phone is removed"  
 
-    # метод для перегляду нотаток
-    def view_notes(self, name):
-        record = self.contacts.find(name)
-        if record:
-            if record.notes:
-                notes_str = ", ".join(note.value for note in record.notes)
-                return f"Notes for {name}: {notes_str}."
-            else:
-                return f"No notes found for {name}."
-        else:
-            raise KeyError
-        
-    def add_tag_to_note(self, name, note_value, tag):
-        record = self.contacts.find(name)
-        if record:
-            record.add_tag_to_note(note_value, tag)
-            self.contacts.save_data()
-            return f"Tag '{tag}' added to note {note_value} for {name}."
-        else:
-            raise KeyError
+    def edit_phone(self, old_phone, new_phone):  # edditing  reccords 
+        if not self.find_phone(old_phone): 
+            raise ValueError
+        for i, phone in enumerate(self.phones): # get position for replasement with phone
+            if phone.value == old_phone:
+                new_phone_obj = Phone(new_phone) 
+                self.phones[i] = new_phone_obj   
 
-    def remove_tag_from_note(self, name, note_value, tag):
-        record = self.contacts.find(name)
-        if record:
-            record.remove_tag_from_note(note_value, tag)
-            self.contacts.save_data()
-            return f"Tag '{tag}' removed from note {note_value} for {name}."
+    def find_phone(self, phone_number:str): # find phone if it exist 
+        phone = Phone(phone_number)
+        for i in self.phones:
+            if i.value == phone.value: 
+                return i.value
+        return None
+    
+    def edit_email(self, new_email):
+        new_email = Email(new_email)
+        self.email = new_email
+        return f"email:{self.email.value}"
+    
+    def add_note(self, note:str):
+        if  self.name.value:
+            new_note_obj = Note(note)
+            self.notes.append(new_note_obj)
+            return f'note added'
         else:
-            raise KeyError
+            raise ValueError(f"The record not exist")
 
-    def search_notes_by_tag(self, tag):
-        found_records = []
-        for record in self.contacts.data.values():
-            for note in record.notes:
-                if note.has_tag(tag):
-                    found_records.append((record, note))
-        if found_records:
-            result = "Found notes with tag '{}':\n".format(tag)
-            for record, note in found_records:
-                result += f"{record.name.value} - {note.value}\n"
-            return result.strip()
+    def show_note(self, name):
+        if name == self.name.value:
+            return f'notes of {name} : {"; ".join(note.value for note in self.notes) if self.notes else "N/A"}'
         else:
-            return "No notes found with tag '{}'.".format(tag)
+            raise ValueError(f"Name not found: {name}")
+
+    def edit_note(self, name, new_note:str):
+        if name == self.name.value:
+            pass
+    
+    def __str__(self) -> str: # readable view
+        return f"contact name:{self.name.value}, phones:{'; '.join(i.value for i in self.phones)}, birthday:{self.birthday.value}, email:{self.email.value}, address:{self.address.value if self.address.value is not None else 'N/A'}, note:{'; '.join(i.value for i in self.notes) if self.note.value is not None else 'N/A'}"
+
+class PersonalAssistant:
+    def __init__(self, storage_path='contacts.json'):
+        self.storage_path = storage_path
+        self.contacts = self.load_contacts()
+
+    def load_contacts(self):
+        if os.path.exists(self.storage_path):
+            with open(self.storage_path, 'r') as file:
+                contacts = json.load(file)
+            return contacts
+        else:
+            return {}
+
+    def save_contacts(self):
+        with open(self.storage_path, 'w') as file:
+            json.dump(self.contacts, file, indent=2)
+
+    def add_contact(self, name, address, phone, email, birthday, note):
+        contact = {
+            'Name': name,
+            'Address': address,
+            'Phone': phone,
+            'Email': email,
+            'Birthday': birthday,
+            'Note': note
+        }
+        self.contacts[name] = contact
+        self.save_contacts()
+        print(f"Контакт {name} додано успішно.")
+
+    def display_contacts(self):
+        if not self.contacts:
+            print("Книга контактів порожня.")
+        else:
+            print("\nКонтакти:")
+            for name, details in self.contacts.items():
+                print(f"\nІм'я: {details['Name']}")
+                print(f"Адреса: {details['Address']}")
+                print(f"Телефон: {details['Phone']}")
+                print(f"Email: {details['Email']}")
+                print(f"День народження: {details['Birthday']}")
+                print(f"Нотатка: {details['Note']}")
+                print("-" * 30)
+
 
 if __name__ == "__main__":
-    assistant = Assistant()
-    assistant.main()
+    assistant = PersonalAssistant()
+
+    while True:
+        print("\nМеню:")
+        print("1. Додати контакт")
+        print("2. Показати всі контакти")
+        print("3. Вийти")
+
+        choice = input("\nВиберіть опцію: ")
+
+        if choice == '1':
+            name = input("\nВведіть ім'я: ")
+            address = input("Введіть адресу: ")
+            phone = input("Введіть номер телефону: ")
+            email = input("Введіть email: ")
+            birthday = input("Введіть день народження: ")
+            note = input("Введіть нотатку: ")
+            assistant.add_contact(name, address, phone, email, birthday, note)
+
+        elif choice == '2':
+            assistant.display_contacts()
+
+        elif choice == '3':
+            break
+
+        else:
+            print("Невірний вибір. Спробуйте ще раз.")
