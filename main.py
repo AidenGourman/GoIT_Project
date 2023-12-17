@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from collections import UserDict
 import pickle
+import re
 
 # Клас Field для представлення загальних полів
 class Field:
@@ -80,6 +81,33 @@ class Record:
         self.phones = []
         self.birthday = Birthday(birthday) if birthday else None
         self.notes = []
+        self.emails = []
+
+    def is_valid_email(self, email):
+        email_regex = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+        return bool(email_regex.match(email))
+
+    def add_email(self, email):
+        if self.is_valid_email(email):
+            self.emails.append(email)
+        else:
+            raise ValueError("Invalid email format")
+
+    def edit_email(self, old_email, new_email):
+        if self.is_valid_email(new_email):
+            if old_email in self.emails:
+                index = self.emails.index(old_email)
+                self.emails[index] = new_email
+            else:
+                raise ValueError(f"Email {old_email} not found.")
+        else:
+            raise ValueError("Invalid email format")
+
+    def remove_email(self, email):
+        if email in self.emails:
+            self.emails.remove(email)
+        else:
+            raise ValueError(f"Email {email} not found.")
 
     # методи для роботи з нотатками
     def add_note(self, note_value, tags=None):
