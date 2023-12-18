@@ -3,7 +3,6 @@ import pickle
 import os
 import re
 
-
 class Field:
     def __init__(self, value=None):
         self.__value = None
@@ -20,7 +19,6 @@ class Field:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.value})"
 
-
 class Name(Field):
     @Field.value.setter
     def value(self, value: str):
@@ -28,7 +26,6 @@ class Name(Field):
             self._Field__value = value
         else:
             raise ValueError('Name should include only letter characters')
-
 
 class Birthday(Field):
     @Field.value.setter
@@ -40,7 +37,6 @@ class Birthday(Field):
             except Exception:
                 raise ValueError("Date should be in the format YYYY-MM-DD")
 
-
 class Phone(Field):
     @Field.value.setter
     def value(self, value):
@@ -49,7 +45,6 @@ class Phone(Field):
             self._Field__value = value
         else:
             raise ValueError('Phone is not valid')
-
 
 class Email(Field):
     @Field.value.setter
@@ -60,7 +55,11 @@ class Email(Field):
             self._Field__value = value
         else:
             raise ValueError("Email is not valid")
-
+        
+class Address(Field):
+    @Field.value.setter
+    def value(self, value):
+        self._Field__value = value
 
 class Note(Field):
     def __init__(self, value, tags=None):
@@ -82,7 +81,97 @@ class Note(Field):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.value}, {self.tags})"
 
+class Record:
+    def __init__(self, name, phone, birthday, email, notes, address=None) -> None:
+        self.name = Name(name)
+        self.birthday = Birthday(birthday)
+        self.phone = Phone(phone) if phone else None
+        self.phones = [self.phone] if phone else []
+        self.email = Email(email)
+        self.address = address
+        self.notes = [notes] if notes else []
 
+    def add_phone(self, phone_number):
+        phone = Phone(phone_number)
+        if phone not in self.phones:
+            self.phones.append(phone)
+
+    def remove_phone(self, phone_number):
+        phone = Phone(phone_number)
+        for i in self.phones:
+            if phone.value == i.value:
+                self.phones.remove(i)
+                return "phone is removed"
+
+    def edit_phone(self, old_phone, new_phone):
+        if not self.find_phone(old_phone):
+            raise ValueError
+        for i, phone in enumerate(self.phones):
+            if phone.value == old_phone:
+                new_phone_obj = Phone(new_phone)
+                self.phones[i] = new_phone_obj
+
+    def find_phone(self, phone_number):
+        phone = Phone(phone_number)
+        for i in self.phones:
+            if i.value == phone.value:
+                return i.value
+        return None
+
+    def edit_email(self, new_email):
+        new_email = Email(new_email)
+        self.email = new_email
+        return f"email:{self.email.value}"
+
+    def show_note(self):
+        if self.name.value:
+            return f'notes: {"; ".join(note for note in self.notes) if self.notes else "N/A"}'
+
+    def find_note(self, keyword):
+        return [note for note in self.notes if keyword.lower() in note.lower()]
+    
+    def add_note(self, note):
+        if self.name.value:
+            self.notes.append(note)
+            return f'notes: {"; ".join(note for note in self.notes) if self.notes else "N/A"}'
+        else:
+            raise ValueError("Contact is not exist")
+    
+    def edit_note(self, keyword, new_note):
+        for i, note in enumerate(self.notes):
+            if keyword.lower() in note.lower():
+                new_note_obj = Note(new_note)
+                self.notes[i] = new_note_obj.value
+                return f"Note edited: {keyword} -> {new_note_obj.value}"
+        else:
+             raise ValueError(f"Note not found")
+    
+    def delete_note(self, keyword):
+        for i, note in enumerate(self.notes):
+            if keyword.lower() in note.lower():
+                self.notes.remove(self.notes[i])
+                return f"Note is removed, notes: {self.notes}"
+        else:
+             raise ValueError(f"Note not found")
+    
+    def days_to_birthday(self):
+        if self.birthday:
+            date_now = datetime.now().date()
+            user_next_birthday = datetime(date_now.year, self.birthday.value.month, self.birthday.value.day).date()
+            user_next_year = user_next_birthday.replace(year=date_now.year +1)
+            delta = user_next_birthday - date_now if user_next_birthday >= date_now else user_next_year - date_now
+            return delta.days
+
+    def __str__(self) -> str:
+        return (
+            f"contact_name:{self.name.value if self.name else 'N/A'}, "
+            f"phones:{'; '.join(i.value for i in self.phones) if self.phones else 'N/A'}, "
+            f"birthday:{self.birthday.value if self.birthday else 'N/A'}, "
+            f"email:{self.email.value if self.email else 'N/A'}, "
+            f"address:{self.address.value if self.address and self.address.value else 'N/A'}, "
+            f"notes:{'; '.join(str(note) for note in self.notes) if self.notes else 'N/A'}, "
+            f"to_birthday:{self.days_to_birthday()}")
+    
 class AddressBook:
     def __init__(self, file_path="address_book.pkl"):
         self.file_path = file_path
@@ -119,68 +208,6 @@ class AddressBook:
         record = Record('', '', '', '', '')
         record.__dict__.update(data)
         return record
-
-
-class Record:
-    def __init__(self, name, phone, birthday, email, note) -> None:
-        self.name = Name(name)
-        self.birthday = Birthday(birthday)
-        self.phone = Phone(phone) if phone else None
-        self.phones = [self.phone] if phone else []
-        self.email = Email(email)
-        self.note = Note(note)
-
-    def add_phone(self, phone_number):
-        phone = Phone(phone_number)
-        if phone not in self.phones:
-            self.phones.append(phone)
-
-    def remove_phone(self, phone_number):
-        phone = Phone(phone_number)
-        for i in self.phones:
-            if phone.value == i.value:
-                self.phones.remove(i)
-                return "phone is removed"
-
-    def edit_phone(self, old_phone, new_phone):
-        if not self.find_phone(old_phone):
-            raise ValueError
-        for i, phone in enumerate(self.phones):
-            if phone.value == old_phone:
-                new_phone_obj = Phone(new_phone)
-                self.phones[i] = new_phone_obj
-
-    def find_phone(self, phone_number):
-        phone = Phone(phone_number)
-        for i in self.phones:
-            if i.value == phone.value:
-                return i.value
-        return None
-
-    def edit_email(self, new_email):
-        new_email = Email(new_email)
-        self.email = new_email
-        return f"email:{self.email.value}"
-
-    def add_note(self, note):
-        if self.name.value:
-            new_note_obj = Note(note)
-            self.note = new_note_obj
-            return f'note added'
-        else:
-            raise ValueError(f"The record does not exist")
-
-    def show_note(self):
-        return f'notes: {self.note.value}'
-
-    def edit_note(self, new_note):
-        self.note.value = new_note
-
-    def __str__(self):
-        return f"contact name:{self.name.value}, phones:{'; '.join(i.value for i in self.phones)}, " \
-               f"birthday:{self.birthday.value}, email:{self.email.value}, " \
-               f"note:{self.note.value if self.note.value is not None else 'N/A'}"
-
 
 class PersonalAssistant:
     def __init__(self, storage_path='contacts.pkl'):
