@@ -3,6 +3,7 @@ import pickle
 import os
 import re
 
+
 class Field:
     def __init__(self, value=None):
         self.__value = None
@@ -19,6 +20,7 @@ class Field:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.value})"
 
+
 class Name(Field):
     @Field.value.setter
     def value(self, value: str):
@@ -26,6 +28,7 @@ class Name(Field):
             self._Field__value = value
         else:
             raise ValueError('Name should include only letter characters')
+
 
 class Birthday(Field):
     @Field.value.setter
@@ -37,6 +40,7 @@ class Birthday(Field):
             except Exception:
                 raise ValueError("Date should be in the format YYYY-MM-DD")
 
+
 class Phone(Field):
     @Field.value.setter
     def value(self, value):
@@ -45,6 +49,7 @@ class Phone(Field):
             self._Field__value = value
         else:
             raise ValueError('Phone is not valid')
+
 
 class Email(Field):
     @Field.value.setter
@@ -55,11 +60,13 @@ class Email(Field):
             self._Field__value = value
         else:
             raise ValueError("Email is not valid")
-        
+
+
 class Address(Field):
     @Field.value.setter
     def value(self, value):
         self._Field__value = value
+
 
 class Note(Field):
     def __init__(self, value, tags=None):
@@ -80,6 +87,7 @@ class Note(Field):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.value}, {self.tags})"
+
 
 class Record:
     def __init__(self, name, phone, birthday, email, notes, address=None) -> None:
@@ -129,14 +137,14 @@ class Record:
 
     def find_note(self, keyword):
         return [note for note in self.notes if keyword.lower() in note.lower()]
-    
+
     def add_note(self, note):
         if self.name.value:
             self.notes.append(note)
             return f'notes: {"; ".join(note for note in self.notes) if self.notes else "N/A"}'
         else:
             raise ValueError("Contact is not exist")
-    
+
     def edit_note(self, keyword, new_note):
         for i, note in enumerate(self.notes):
             if keyword.lower() in note.lower():
@@ -144,22 +152,24 @@ class Record:
                 self.notes[i] = new_note_obj.value
                 return f"Note edited: {keyword} -> {new_note_obj.value}"
         else:
-             raise ValueError(f"Note not found")
-    
+            raise ValueError(f"Note not found")
+
     def delete_note(self, keyword):
         for i, note in enumerate(self.notes):
             if keyword.lower() in note.lower():
                 self.notes.remove(self.notes[i])
                 return f"Note is removed, notes: {self.notes}"
         else:
-             raise ValueError(f"Note not found")
-    
+            raise ValueError(f"Note not found")
+
     def days_to_birthday(self):
         if self.birthday:
             date_now = datetime.now().date()
-            user_next_birthday = datetime(date_now.year, self.birthday.value.month, self.birthday.value.day).date()
-            user_next_year = user_next_birthday.replace(year=date_now.year +1)
-            delta = user_next_birthday - date_now if user_next_birthday >= date_now else user_next_year - date_now
+            user_next_birthday = datetime(
+                date_now.year, self.birthday.value.month, self.birthday.value.day).date()
+            user_next_year = user_next_birthday.replace(year=date_now.year + 1)
+            delta = user_next_birthday - \
+                date_now if user_next_birthday >= date_now else user_next_year - date_now
             return delta.days
 
     def __str__(self) -> str:
@@ -171,7 +181,8 @@ class Record:
             f"address:{self.address.value if self.address and self.address.value else 'N/A'}, "
             f"notes:{'; '.join(str(note) for note in self.notes) if self.notes else 'N/A'}, "
             f"to_birthday:{self.days_to_birthday()}")
-    
+
+
 class AddressBook:
     def __init__(self, file_path="address_book.pkl"):
         self.file_path = file_path
@@ -208,6 +219,7 @@ class AddressBook:
         record = Record('', '', '', '', '')
         record.__dict__.update(data)
         return record
+
 
 class PersonalAssistant:
     def __init__(self, storage_path='contacts.pkl'):
@@ -262,12 +274,8 @@ class PersonalAssistant:
         else:
             print("\nContacts:")
             for name, details in self.contacts.items():
-                print(f"\nName: {details['Name']}")
-                print(f"Address: {details['Address']}")
-                print(f"Phone: {details['Phone']}")
-                print(f"Email: {details['Email']}")
-                print(f"Birthday: {details['Birthday']}")
-                print(f"Note: {details['Note']}")
+                print(
+                    f"\nName: {details['Name']}, Address: {details['Address']}, Phone: {details['Phone']}, Email: {details['Email']}, Birthday: {details['Birthday']}, Note: {details['Note']}")
                 print("-" * 30)
 
     def run_menu(self):
@@ -275,7 +283,11 @@ class PersonalAssistant:
             print("\nMenu:")
             print("1. Add contact")
             print("2. Display all contacts")
-            print("3. Exit")
+            print("3. Edit contact")
+            print("4. Delete contact")
+            print("5. Find contact")
+            print("-" * 20)
+            print("8. Exit")
 
             choice = input("\nChoose an option: ")
 
