@@ -1,4 +1,8 @@
+from _collections_abc import Iterator
 from datetime import datetime
+from collections import UserDict
+from faker import Faker 
+import random
 import pickle
 import os
 import re
@@ -90,14 +94,14 @@ class Note(Field):
 
 
 class Record:
-    def __init__(self, name, phone, birthday, email, notes, address=None) -> None:
+    def __init__(self, name, phone, birthday, email, notes=None, address=None) -> None:
         self.name = Name(name)
         self.birthday = Birthday(birthday)
         self.phone = Phone(phone) if phone else None
         self.phones = [self.phone] if phone else []
         self.email = Email(email)
-        self.address = address
-        self.notes = [notes] if notes else []
+        self.address = Address(address)
+        self.notes = [Note(notes)] if notes else []
 
     def add_phone(self, phone_number):
         phone = Phone(phone_number)
@@ -183,61 +187,50 @@ class Record:
             f"to_birthday:{self.days_to_birthday()}")
 
 
-class AddressBook:
-    def __init__(self, file_path="address_book.pkl"):
-        self.file_path = file_path
-        self.load_data()
+class AddressBook(UserDict): 
+    def add_record(self, record: Record): # add record in dictionary
+        key = record.name.value
+        self.data[key] = record
 
-    def load_data(self):
-        try:
-            with open(self.file_path, 'rb') as file:
-                self.data = pickle.load(file)
-        except FileNotFoundError:
-            self.data = {}
+    def find(self, name):   # get record in dictionary
+        return self.data.get(name)
 
-    def save_data(self):
-        with open(self.file_path, 'wb') as file:
-            pickle.dump(self.data, file)
-
-    def add_record(self, record):
-        self.data[record.name.value] = record.__dict__
-        self.save_data()
-
-    def delete(self, name):
+    def delete(self, name):  # delete record in dictionary
         if name in self.data:
             del self.data[name]
-            self.save_data()
-
-    def find(self, query):
-        found_records = []
-        for name, record_data in self.data.items():
-            if query.lower() in name.lower():
-                found_records.append(self.create_record(record_data))
-        return found_records
-
-    def create_record(self, data):
-        record = Record('', '', '', '', '')
-        record.__dict__.update(data)
-        return record
+            return print(f'record {name} deleted')
 
 
-class PersonalAssistant:
-    def __init__(self, storage_path='contacts.pkl'):
-        self.storage_path = storage_path
-        self.contacts = self.load_contacts()
+    def save_to_file(self, filename):     # serialization data to file
+        with open(filename, 'wb') as file_write:
+            pickle.dump(self.data, file_write)
+            return f'exit'
+    
+    def restore_from_file(self, filename): # deserialization data from file
+        with open(filename, 'rb') as file_read:
+            self.data = pickle.load(file_read)
 
-    def load_contacts(self):
-        try:
-            with open(self.storage_path, 'rb') as file:
-                contacts = pickle.load(file)
-            return contacts
-        except FileNotFoundError:
-            return {}
-
-    def save_contacts(self):
-        with open(self.storage_path, 'wb') as file:
-            pickle.dump(self.contacts, file)
-
+    def search (self, row):  # searching records via partial name or phone
+        row = row.lower()
+        result = [f'{record.name.value}, {", ".join(phone.value for phone in record.phones)}, {record.birthday.value}' 
+                for record in self.data.values() if row in record.name.value.lower() 
+                or any(row in phone.value for phone in record.phones)]
+        return "\n".join(result) if result else None
+    
+    def generate_random_contacts(self, n=10): # generate records for address_book
+        fake = Faker()
+        for i in range(n+1):
+            name = fake.name()
+            phone =f'{0}{random.choice("3456789")}{random.randint(10**7,10**8-1)}' # random phone numbers according pattern (r"^0[3456789]\d{8}$")
+            birthday =  fake.date_of_birth(minimum_age=18, maximum_age=60).strftime('%Y-%m-%d')
+            email = fake.email()
+            notes = fake.text()
+            address = fake.address()
+            record = Record(name, phone, birthday, email, notes, address)
+            self.add_record(record)
+        self.save_to_file(filename)
+        print('AddressBook records are generated and saved')
+    
     def validate_input(self, prompt, validation_func):
         while True:
             user_input = input(prompt)
@@ -247,39 +240,53 @@ class PersonalAssistant:
             except ValueError as e:
                 print(f"Error: {e}")
 
-    def add_contact(self):
+    def get_contact(self):
         name = self.validate_input("\nEnter name: ", lambda x: Name(x))
-        address = input("Enter address: ")
+        address = self.validate_input("\nEnter Address: ", lambda x: Address(x))
         phone = self.validate_input("Enter phone: ", lambda x: Phone(x))
         email = self.validate_input("Enter email: ", lambda x: Email(x))
         birthday = self.validate_input(
             "Enter birthday (YYYY-MM-DD): ", lambda x: Birthday(x))
-        note = input("Enter note: ")
+        note = self.validate_input("\nEnter note: ", lambda x: Note(x))
+        return Record(name, phone, birthday, email, note, address)
 
-        contact = {
-            'Name': name,
-            'Address': address,
-            'Phone': phone,
-            'Email': email,
-            'Birthday': birthday,
-            'Note': note
-        }
-        self.contacts[name] = contact
-        self.save_contacts()
-        print(f"Contact {name} added successfully.")
+   
+    def __iter__(self) -> Iterator:
+        return AddressBookIterator(self.data.values(), page_size=2) # Iterable class
+   
+    def __repr__(self):
+        return f"AddressBook({self.data})"
 
-    def display_contacts(self):
-        if not self.contacts:
-            print("Address book is empty.")
+class AddressBookIterator:
+    def __init__(self, records_list, page_size):
+        self.records = list(records_list)
+        self.page_size = page_size
+        self.counter = 0  # quantity on page
+        self.page = len(self.records) // self.page_size # use for showing part of the reccords that size < page_size
+    
+    def __next__(self):
+        if self.counter >= len(self.records):
+            raise StopIteration
         else:
-            print("\nContacts:")
-            for name, details in self.contacts.items():
-                print(
-                    f"\nName: {details['Name']}, Address: {details['Address']}, Phone: {details['Phone']}, Email: {details['Email']}, Birthday: {details['Birthday']}, Note: {details['Note']}")
-                print("-" * 30)
-
-    def run_menu(self):
-        while True:
+            if self.page > 0:
+                result = list(self.records[self.counter:self.counter + self.page_size]) # slice reccords on the page
+                self.page -= 1
+                self.counter += self.page_size
+            else:
+                result = list(self.records[self.counter:])  #the rest of the records on the page
+                self.counter = len(self.records)
+        return result        
+  
+if __name__ == '__main__':
+    filename = 'contacts.pkl'   
+    address_book = AddressBook()  #  create object
+    try:
+        if os.path.getsize(filename)>0: # check if file of data not empty
+            address_book.restore_from_file(filename)
+    except Exception:
+        f'first run, will be create file'
+#       address_book.generate_random_contacts()
+    while True:
             print("\nMenu:")
             print("1. Add contact")
             print("2. Display all contacts")
@@ -292,18 +299,22 @@ class PersonalAssistant:
             choice = input("\nChoose an option: ")
 
             if choice == '1':
-                self.add_contact()
+                address_book.add_record(address_book.get_contact())
+                print('reccord added')
 
             elif choice == '2':
-                self.display_contacts()
+                for page in address_book:
+                    for record in page:
+                        print(record)
+                        print(record.days_to_birthday())
+                print('*' * 20)
 
             elif choice == '3':
-                break
+                pass
 
+            elif choice == '8':
+                address_book.save_to_file(filename) 
+                print(f'address_book saved')
+                break
             else:
                 print("Invalid choice. Please try again.")
-
-
-if __name__ == "__main__":
-    assistant = PersonalAssistant()
-    assistant.run_menu()
