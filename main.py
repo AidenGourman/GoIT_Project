@@ -146,36 +146,36 @@ class Record:
         self.email = new_email
         return f"email:{self.email.value}"
 
-    def show_note(self):
-        if self.name.value:
-            return f'notes: {"; ".join(note for note in self.notes) if self.notes else "N/A"}'
+    def show_notes(self):
+        return f'Notes: {"; ".join(str(note) for note in self.notes) if self.notes else "No notes"}'
 
     def find_note(self, keyword):
-        return [note for note in self.notes if keyword.lower() in note.lower()]
+        matching_notes = [
+            str(note) for note in self.notes if keyword.lower() in str(note).lower()]
+        return matching_notes
 
-    def add_note(self, note):
-        if self.name.value:
-            self.notes.append(note)
-            return f'notes: {"; ".join(note for note in self.notes) if self.notes else "N/A"}'
-        else:
-            raise ValueError("Contact is not exist")
+    def add_note(self, note_value, tags=None):
+        new_note = Note(note_value, tags)
+        self.notes.append(new_note)
+        return f'notes: {"; ".join(str(note) for note in self.notes) if self.notes else "N/A"}'
 
-    def edit_note(self, keyword, new_note):
-        for i, note in enumerate(self.notes):
-            if keyword.lower() in note.lower():
-                new_note_obj = Note(new_note)
-                self.notes[i] = new_note_obj.value
-                return f"Note edited: {keyword} -> {new_note_obj.value}"
+    def edit_note(self, keyword, new_note_value, new_tags=None):
+        for note in self.notes:
+            if keyword.lower() in str(note).lower():
+                note.edit_value(new_note_value)
+                if new_tags is not None:
+                    note.tags = new_tags
+                return f"Note edited: {keyword} -> {note}, tags: {note.tags}"
         else:
-            raise ValueError(f"Note not found")
+            raise ValueError("Note not found.")
 
     def delete_note(self, keyword):
-        for i, note in enumerate(self.notes):
-            if keyword.lower() in note.lower():
-                self.notes.remove(self.notes[i])
-                return f"Note is removed, notes: {self.notes}"
+        for note in self.notes:
+            if keyword.lower() in str(note).lower():
+                self.notes.remove(note)
+                return f"Note deleted, notes: {self.show_notes()}"
         else:
-            raise ValueError(f"Note not found")
+            raise ValueError("Note not found.")
 
     def days_to_birthday(self):
         if self.birthday:
@@ -226,6 +226,13 @@ class AddressBook(UserDict):
                   for record in self.data.values() if row in record.name.value.lower()
                   or any(row in phone.value for phone in record.phones)]
         return "\n".join(result) if result else None
+
+    def add_note_to_contact(self, contact_name, note_value, tags=None):
+        contact = self.find(contact_name)
+        if contact:
+            return contact.add_note(note_value, tags)
+        else:
+            raise ValueError("Contact not found.")
 
     # generate records for address_book
     def generate_random_contacts(self, n=10):
@@ -391,19 +398,57 @@ if __name__ == '__main__':
                 choice = input("\nChoose an option: ")
 
                 if choice == '1':  # Add note
-                    pass
+                    contact_name = input("Enter contact name: ")
+                    note_value = input("Enter note: ")
+                    tags = input("Enter tags (comma-separated): ").split(',')
+                    try:
+                        result = address_book.add_note_to_contact(
+                            contact_name, note_value, tags)
+                        console.print(result, style="success")
+                    except ValueError as e:
+                        console.print(f"Error: {e}", style="error")
 
                 elif choice == '2':  # Show all notes
-                    pass
+                    contact_name = input("Enter contact name: ")
+                    contact = address_book.find(contact_name)
+                    if contact:
+                        notes_result = contact.show_notes()
+                        console.print(
+                            notes_result if notes_result != "No notes" else "warning")
+                    else:
+                        print("Contact not found", style="error")
 
                 elif choice == '3':  # Edit notes
                     pass
 
-                elif choice == '4':  # Delete notes
-                    pass
+                elif choice == '4':  # Delete note
+                    contact_name = input("Enter contact name: ")
+                    contact = address_book.find(contact_name)
+                    if contact:
+                        keyword = input("Enter keyword to delete note: ")
+                        try:
+                            result = contact.delete_note(keyword)
+                            console.print(result, style="success")
+                        except ValueError as e:
+                            console.print(f"Error: {e}", style="error")
+                    else:
+                        console.print("Contact not found", style="error")
 
                 elif choice == '5':  # Find notes
-                    pass
+                    contact_name = input("Enter contact name: ")
+                    contact = address_book.find(contact_name)
+                    if contact:
+                        keyword = input(
+                            "Enter a keyword to search in notes: ")
+                        matching_notes = contact.find_note(keyword)
+                        if matching_notes:
+                            console.print("Notes found:")
+                            for note in matching_notes:
+                                console.print(note)
+                        else:
+                            console.print("Notes not found", style="warning")
+                    else:
+                        console.print("Contact not found", style="error")
 
                 elif choice == '6':  # Exit from note menu and back to contact menu
                     break
