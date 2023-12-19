@@ -1,7 +1,7 @@
 from _collections_abc import Iterator
 from datetime import datetime
 from collections import UserDict
-from faker import Faker 
+from faker import Faker
 import random
 import pickle
 import os
@@ -187,8 +187,8 @@ class Record:
             f"to_birthday:{self.days_to_birthday()}")
 
 
-class AddressBook(UserDict): 
-    def add_record(self, record: Record): # add record in dictionary
+class AddressBook(UserDict):
+    def add_record(self, record: Record):  # add record in dictionary
         key = record.name.value
         self.data[key] = record
 
@@ -200,29 +200,31 @@ class AddressBook(UserDict):
             del self.data[name]
             return print(f'record {name} deleted')
 
-
     def save_to_file(self, filename):     # serialization data to file
         with open(filename, 'wb') as file_write:
             pickle.dump(self.data, file_write)
             return f'exit'
-    
-    def restore_from_file(self, filename): # deserialization data from file
+
+    def restore_from_file(self, filename):  # deserialization data from file
         with open(filename, 'rb') as file_read:
             self.data = pickle.load(file_read)
 
-    def search (self, row):  # searching records via partial name or phone
+    def search(self, row):  # searching records via partial name or phone
         row = row.lower()
-        result = [f'{record.name.value}, {", ".join(phone.value for phone in record.phones)}, {record.birthday.value}' 
-                for record in self.data.values() if row in record.name.value.lower() 
-                or any(row in phone.value for phone in record.phones)]
+        result = [f'{record.name.value}, {", ".join(phone.value for phone in record.phones)}, {record.birthday.value}'
+                  for record in self.data.values() if row in record.name.value.lower()
+                  or any(row in phone.value for phone in record.phones)]
         return "\n".join(result) if result else None
-    
-    def generate_random_contacts(self, n=10): # generate records for address_book
+
+    # generate records for address_book
+    def generate_random_contacts(self, n=10):
         fake = Faker()
         for i in range(n+1):
             name = fake.name()
-            phone =f'{0}{random.choice("3456789")}{random.randint(10**7,10**8-1)}' # random phone numbers according pattern (r"^0[3456789]\d{8}$")
-            birthday =  fake.date_of_birth(minimum_age=18, maximum_age=60).strftime('%Y-%m-%d')
+            # random phone numbers according pattern (r"^0[3456789]\d{8}$")
+            phone = f'{0}{random.choice("3456789")}{random.randint(10**7,10**8-1)}'
+            birthday = fake.date_of_birth(
+                minimum_age=18, maximum_age=60).strftime('%Y-%m-%d')
             email = fake.email()
             notes = fake.text()
             address = fake.address()
@@ -230,7 +232,7 @@ class AddressBook(UserDict):
             self.add_record(record)
         self.save_to_file(filename)
         print('AddressBook records are generated and saved')
-    
+
     def validate_input(self, prompt, validation_func):
         while True:
             user_input = input(prompt)
@@ -242,7 +244,8 @@ class AddressBook(UserDict):
 
     def get_contact(self):
         name = self.validate_input("\nEnter name: ", lambda x: Name(x))
-        address = self.validate_input("\nEnter Address: ", lambda x: Address(x))
+        address = self.validate_input(
+            "\nEnter Address: ", lambda x: Address(x))
         phone = self.validate_input("Enter phone: ", lambda x: Phone(x))
         email = self.validate_input("Enter email: ", lambda x: Email(x))
         birthday = self.validate_input(
@@ -250,71 +253,148 @@ class AddressBook(UserDict):
         note = self.validate_input("\nEnter note: ", lambda x: Note(x))
         return Record(name, phone, birthday, email, note, address)
 
-   
+# //////////////////// NOTe LOGIC ///////////////////
+
+# //////////////////// NOTe LOGIC ///////////////////
+
     def __iter__(self) -> Iterator:
-        return AddressBookIterator(self.data.values(), page_size=2) # Iterable class
-   
+        # Iterable class
+        return AddressBookIterator(self.data.values(), page_size=2)
+
     def __repr__(self):
         return f"AddressBook({self.data})"
+
 
 class AddressBookIterator:
     def __init__(self, records_list, page_size):
         self.records = list(records_list)
         self.page_size = page_size
         self.counter = 0  # quantity on page
-        self.page = len(self.records) // self.page_size # use for showing part of the reccords that size < page_size
-    
+        # use for showing part of the reccords that size < page_size
+        self.page = len(self.records) // self.page_size
+
     def __next__(self):
         if self.counter >= len(self.records):
             raise StopIteration
         else:
             if self.page > 0:
-                result = list(self.records[self.counter:self.counter + self.page_size]) # slice reccords on the page
+                # slice reccords on the page
+                result = list(
+                    self.records[self.counter:self.counter + self.page_size])
                 self.page -= 1
                 self.counter += self.page_size
             else:
-                result = list(self.records[self.counter:])  #the rest of the records on the page
+                # the rest of the records on the page
+                result = list(self.records[self.counter:])
                 self.counter = len(self.records)
-        return result        
-  
+        return result
+
+
 if __name__ == '__main__':
-    filename = 'contacts.pkl'   
-    address_book = AddressBook()  #  create object
+    filename = 'contacts.pkl'
+    address_book = AddressBook()  # create object
     try:
-        if os.path.getsize(filename)>0: # check if file of data not empty
+        if os.path.getsize(filename) > 0:  # check if file of data not empty
             address_book.restore_from_file(filename)
     except Exception:
-        f'first run, will be create file'
+        f'First run, will be create file'
 #       address_book.generate_random_contacts()
     while True:
-            print("\nMenu:")
-            print("1. Add contact")
-            print("2. Display all contacts")
-            print("3. Edit contact")
-            print("4. Delete contact")
-            print("5. Find contact")
-            print("-" * 20)
-            print("8. Exit")
+        print("\nMenu:")
+        print("-" * 45)
+        print("1. Add contact  | 2. Display all contacts")
+        print("3. Edit contact | 4. Delete contact")
+        print("5. Find contact | 6. Find the nearest birthday")
+        print("-" * 45)
+        print("7. Note menu")
+        print("-" * 12)
+        print("8. Exit")
 
-            choice = input("\nChoose an option: ")
+        choice = input("\nChoose an option: ")
 
-            if choice == '1':
-                address_book.add_record(address_book.get_contact())
-                print('reccord added')
+        if choice == '1':
+            address_book.add_record(address_book.get_contact())
+            print('Contact added successfully')
 
-            elif choice == '2':
-                for page in address_book:
-                    for record in page:
-                        print(record)
-                        print(record.days_to_birthday())
-                print('*' * 20)
+        elif choice == '2':
+            for page in address_book:
+                for record in page:
+                    print(record)
+                    print(record.days_to_birthday())
+            print('*' * 20)
+# /////////////////////////////////EDIT MENU ///////////////////////////////////////
+        elif choice == '3':
+            while True:
+                print("\nEdit menu:")
+                print("-" * 45)
+                print("1. Edit whole contact")
+                print("2. Edit contact phone number")
+                print("3. Edit contact mail")
+                print("4. Return to contact menu")
+                print("-" * 45)
 
-            elif choice == '3':
-                pass
+                choice = input("\nChoose an option: ")
 
-            elif choice == '8':
-                address_book.save_to_file(filename) 
-                print(f'address_book saved')
-                break
-            else:
-                print("Invalid choice. Please try again.")
+                if choice == '1':  # Edit whole contact
+                    pass
+
+                elif choice == '2':  # Edit contact phone number
+                    pass
+
+                elif choice == '3':  # Edit contact mail
+                    pass
+
+                elif choice == '4':  # Exit from edit menu and back to contact menu
+                    break
+                else:
+                    print("Invalid choice. Please try again.")
+
+# /////////////////////////////////EDIT MENU ///////////////////////////////////////
+        elif choice == '4':
+            pass
+
+        elif choice == '5':
+            pass
+
+        elif choice == '6':
+            pass
+
+# ///////////////////////  LOGIC FOR NOTES MENU /////////////////////////
+        elif choice == '7':
+            while True:
+                print("\nNote menu:")
+                print("-" * 45)
+                print("1. Add note  | 2. Show all notes")
+                print("3. Edit note | 4. Delete note")
+                print("5. Find note | 6. Return to contact menu")
+
+                choice = input("\nChoose an option: ")
+
+                if choice == '1':  # Add note
+                    pass
+
+                elif choice == '2':  # Show all notes
+                    pass
+
+                elif choice == '3':  # Edit notes
+                    pass
+
+                elif choice == '4':  # Delete notes
+                    pass
+
+                elif choice == '5':  # Find notes
+                    pass
+
+                elif choice == '6':  # Exit from note menu and back to contact menu
+                    break
+                else:
+                    print("Invalid choice. Please try again.")
+
+
+# ^^^^^///////////////////////  LOGIC FOR NOTES MENU /////////////////////////^^^^^^
+        elif choice == '8':
+            address_book.save_to_file(filename)
+            print(f'Contactbook saved, have a nice day! :D')
+            break
+        else:
+            print("Invalid choice. Please try again.")
