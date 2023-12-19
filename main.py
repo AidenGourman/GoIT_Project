@@ -178,7 +178,7 @@ class Record:
 
     def __str__(self) -> str:
         return (
-            f"contact_name:{self.name.value if self.name else 'N/A'}, "
+            f"Contact_name:{self.name.value if self.name else 'N/A'}, "
             f"phones:{'; '.join(i.value for i in self.phones) if self.phones else 'N/A'}, "
             f"birthday:{self.birthday.value if self.birthday else 'N/A'}, "
             f"email:{self.email.value if self.email else 'N/A'}, "
@@ -308,7 +308,7 @@ if __name__ == '__main__':
         print("-" * 45)
         print("7. Note menu")
         print("-" * 12)
-        print("8. Exit")
+        print("8. Save & Exit")
 
         choice = input("\nChoose an option: ")
 
@@ -356,8 +356,13 @@ if __name__ == '__main__':
         elif choice == '5':
             pass
 
-        elif choice == '6':
-            pass
+        elif choice == '6':  # display_contacts_n_day_to birthday
+            n = int(input("Input quantity days to birthday: "))
+            for page in address_book:
+                for record in page:
+                    if record.days_to_birthday() <= n:
+                        print(record)
+                print('*' * 20)
 
 # ///////////////////////  LOGIC FOR NOTES MENU /////////////////////////
         elif choice == '7':
