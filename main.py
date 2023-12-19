@@ -284,35 +284,63 @@ if __name__ == '__main__':
         if os.path.getsize(filename)>0: # check if file of data not empty
             address_book.restore_from_file(filename)
     except Exception:
-        f'first run, will be create file'
+        f'first run, nothin to resrore'
 #       address_book.generate_random_contacts()
     while True:
             print("\nMenu:")
             print("1. Add contact")
             print("2. Display all contacts")
-            print("3. Edit contact")
-            print("4. Delete contact")
-            print("5. Find contact")
-            print("-" * 20)
-            print("8. Exit")
+            print("3. Show contact, some days to birthday")
+            print("4. Find contact")
+            print("5. Edit contact")
+            print("6. Delete contact")
+            print("7. Show contacts with some notes")
+            print("8. Edit notes")
+            print("9. Delete notes")
+            print("10. Sort notes")
+            print("11. Sort files in folder")
+            print("12. Exit")
 
             choice = input("\nChoose an option: ")
 
-            if choice == '1':
+            if choice == '1':  #add contact
                 address_book.add_record(address_book.get_contact())
                 print('reccord added')
 
-            elif choice == '2':
+            elif choice == '2': # display_contacts
                 for page in address_book:
                     for record in page:
                         print(record)
-                        print(record.days_to_birthday())
+                    #    print(record.days_to_birthday())
                 print('*' * 20)
 
-            elif choice == '3':
+            elif choice == '3': # display_contacts_n_day_to birthday
+                n = int(input("Input quantity days to birthday: "))
+                for page in address_book:
+                    for record in page:
+                        if record.days_to_birthday() <= n:
+                            print(record)
+                    print('*' * 20)
+            
+            elif choice == '4':
                 pass
+            
+            elif choice == '5':
+                pass
+            elif choice == '6':
+                pass
+            elif choice == '7':
+                pass            
 
             elif choice == '8':
+                pass
+            elif choice == '9':
+                pass
+            elif choice == '10':
+                pass
+            elif choice == '11':
+                pass                        
+            elif choice == '12':
                 address_book.save_to_file(filename) 
                 print(f'address_book saved')
                 break
