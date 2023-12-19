@@ -189,13 +189,13 @@ class Record:
 
     def __str__(self) -> str:
         return (
-            f"Contact_name:{self.name.value if self.name else 'N/A'}, "
-            f"phones:{'; '.join(i.value for i in self.phones) if self.phones else 'N/A'}, "
-            f"birthday:{self.birthday.value if self.birthday else 'N/A'}, "
-            f"email:{self.email.value if self.email else 'N/A'}, "
-            f"address:{self.address.value if self.address and self.address.value else 'N/A'}, "
-            f"notes:{'; '.join(str(note) for note in self.notes) if self.notes else 'N/A'}, "
-            f"to_birthday:{self.days_to_birthday()}")
+            f"Contact_name: {self.name.value if self.name else 'N/A'} || "
+            f"Phone: {'; '.join(i.value for i in self.phones) if self.phones else 'N/A'} || "
+            f"Birthday: {self.birthday.value if self.birthday else 'N/A'} || "
+            f"Email: {self.email.value if self.email else 'N/A'} || "
+            f"Address: {self.address.value if self.address and self.address.value else 'N/A'} || "
+            f"Notes: {'; '.join(str(note) for note in self.notes) if self.notes else 'N/A'} || "
+            f"To_birthday: {self.days_to_birthday()}")
 
 
 class AddressBook(UserDict):
@@ -206,10 +206,12 @@ class AddressBook(UserDict):
     def find(self, name):   # get record in dictionary
         return self.data.get(name)
 
-    def delete(self, name):  # delete record in dictionary
+    def delete(self, name):  # delete contact in dictionary
         if name in self.data:
             del self.data[name]
-            return print(f'record {name} deleted')
+            return f'Record {name} deleted'
+        else:
+            raise KeyError(f"Contact '{name}' not found.")
 
     def save_to_file(self, filename):     # serialization data to file
         with open(filename, 'wb') as file_write:
@@ -222,10 +224,11 @@ class AddressBook(UserDict):
 
     def search(self, row):  # searching records via partial name or phone
         row = row.lower()
-        result = [f'{record.name.value}, {", ".join(phone.value for phone in record.phones)}, {record.birthday.value}'
-                  for record in self.data.values() if row in record.name.value.lower()
-                  or any(row in phone.value for phone in record.phones)]
-        return "\n".join(result) if result else None
+        result = []
+        for record in self.data.values():
+            if row in record.name.value.lower() or any(row in phone.value for phone in record.phones):
+                result.append(record)
+        return result
 
     def add_note_to_contact(self, contact_name, note_value, tags=None):
         contact = self.find(contact_name)
@@ -372,11 +375,29 @@ if __name__ == '__main__':
                         "Invalid choice. Please try again.", style="error")
 
 # /////////////////////////////////EDIT MENU ///////////////////////////////////////
-        elif choice == '4':
-            pass
+        elif choice == '4':  # Delete contact
+            contact_name = input("Enter contact name to delete: ")
+            try:
+                address_book.delete(contact_name)
+                console.print(
+                    f"Contact '{contact_name}' deleted successfully", style="success")
+            except KeyError:
+                console.print(
+                    f"Contact '{contact_name}' not found", style="error")
 
-        elif choice == '5':
-            pass
+        elif choice == '5':  # Find contact
+            search_query = input(
+                "Enter a name or phone number to search: ").lower()
+
+            # Search for contacts
+            search_result = address_book.search(search_query)
+
+            if search_result:
+                console.print("Search result:")
+                for result in search_result:
+                    console.print(result)
+            else:
+                console.print("No matching contacts found", style="warning")
 
         elif choice == '6':  # display_contacts_n_day_to birthday
             n = int(input("Input quantity days to birthday: "))
