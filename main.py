@@ -6,6 +6,17 @@ import random
 import pickle
 import os
 import re
+import time
+
+from rich import print
+from rich.console import Console
+from rich.theme import Theme
+from rich.progress import track
+
+
+custom_theme = Theme(
+    {"success": "bold green", "error": "bold red", "warning": "bold yellow"})
+console = Console(theme=custom_theme)
 
 
 class Field:
@@ -299,6 +310,9 @@ if __name__ == '__main__':
     except Exception:
         f'First run, will be create file'
 #       address_book.generate_random_contacts()
+    for i in track(range(5), description="Loading data..."):
+        print(f"loading {i}")
+        time.sleep(0.5)
     while True:
         print("\nMenu:")
         print("-" * 45)
@@ -314,7 +328,7 @@ if __name__ == '__main__':
 
         if choice == '1':
             address_book.add_record(address_book.get_contact())
-            print('Contact added successfully')
+            console.print('Contact added successfully', style="success")
 
         elif choice == '2':
             for page in address_book:
@@ -347,7 +361,8 @@ if __name__ == '__main__':
                 elif choice == '4':  # Exit from edit menu and back to contact menu
                     break
                 else:
-                    print("Invalid choice. Please try again.")
+                    console.print(
+                        "Invalid choice. Please try again.", style="error")
 
 # /////////////////////////////////EDIT MENU ///////////////////////////////////////
         elif choice == '4':
@@ -393,13 +408,15 @@ if __name__ == '__main__':
                 elif choice == '6':  # Exit from note menu and back to contact menu
                     break
                 else:
-                    print("Invalid choice. Please try again.")
+                    console.print(
+                        "Invalid choice. Please try again.", style="error")
 
 
 # ^^^^^///////////////////////  LOGIC FOR NOTES MENU /////////////////////////^^^^^^
         elif choice == '8':
             address_book.save_to_file(filename)
-            print(f'Contactbook saved, have a nice day! :D')
+            console.print(
+                f'Contactbook saved, have a nice day! :D', style="success")
             break
         else:
-            print("Invalid choice. Please try again.")
+            console.print("Invalid choice. Please try again.", style="error")
