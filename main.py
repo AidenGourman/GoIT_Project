@@ -345,7 +345,7 @@ if __name__ == '__main__':
                 for record in page:
                     print(record)
                     print(record.days_to_birthday())
-            print('*' * 20)
+            print('-' * 45)
 # /////////////////////////////////EDIT MENU ///////////////////////////////////////
         elif choice == '3':
             while True:
