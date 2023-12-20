@@ -131,11 +131,15 @@ class Record:
         return None
 
     def edit_email(self, new_email):
+        # Check if the new email is a duplicate of the current one
+        if new_email.lower() == self.email.value.lower():
+            raise ValueError("The new email address matches the current one")
+
         try:
             # Use the existing Email instance associated with the contact
             self.email.value = new_email
             self.email.validate_email(new_email)
-            return f"Email edited: {new_email}"
+            return f"Email changed: {new_email}"
         except ValueError as e:
             raise ValueError(f"Error: {e}")
 
