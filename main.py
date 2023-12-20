@@ -69,11 +69,13 @@ class Phone(Field):
 class Email(Field):
     @Field.value.setter
     def value(self, value):
+        self.validate_email(value)
+        self._Field__value = value
+
+    def validate_email(self, value):
         email_pattern = re.compile(
             "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-        if email_pattern.match(value):
-            self._Field__value = value
-        else:
+        if not email_pattern.match(value):
             raise ValueError("Email is not valid")
 
 
@@ -129,9 +131,13 @@ class Record:
         return None
 
     def edit_email(self, new_email):
-        new_email = Email(new_email)
-        self.email = new_email
-        return f"email:{self.email.value}"
+        try:
+            # Use the existing Email instance associated with the contact
+            self.email.value = new_email
+            self.email.validate_email(new_email)
+            return f"Email edited: {new_email}"
+        except ValueError as e:
+            raise ValueError(f"Error: {e}")
 
     def show_notes(self):
         return f'Notes: {"; ".join(str(note) for note in self.notes) if self.notes else "No notes"}'
@@ -163,7 +169,7 @@ class Record:
                 return f"Note deleted, notes: {self.show_notes()}"
         else:
             raise ValueError("Note not found.")
-        
+
     def add_tag_to_note(self, keyword, tag):
         for note in self.notes:
             if keyword.lower() in str(note).lower():
@@ -208,7 +214,7 @@ class Record:
             f"Email: {self.email.value if self.email else 'N/A'} || "
             f"Address: {self.address.value if self.address and self.address.value else 'N/A'} || "
             f"Notes: {'; '.join(str(note) for note in self.notes) if self.notes else 'N/A'} || "
-            f"To_birthday: {self.days_to_birthday()}")
+        )
 
 
 class AddressBook(UserDict):
@@ -361,13 +367,15 @@ if __name__ == '__main__':
             print('-' * 45)
 # /////////////////////////////////EDIT MENU ///////////////////////////////////////
         elif choice == '3':
+            contact_name = input("Enter the contact name to edit: ")
+            contact = address_book.find(contact_name)
             while True:
                 print("\nEdit menu:")
                 print("-" * 45)
-                print("1. Edit whole contact")
-                print("2. Edit contact phone number")
-                print("3. Edit contact mail")
-                print("4. Return to contact menu")
+                print("1. Edit the entire contact")
+                print("2. Edit the contact phone number")
+                print("3. Edit the contact email address")
+                print("4. Return to the contact menu")
                 print("-" * 45)
 
                 choice = input("\nChoose an option: ")
@@ -378,14 +386,21 @@ if __name__ == '__main__':
                 elif choice == '2':  # Edit contact phone number
                     pass
 
-                elif choice == '3':  # Edit contact mail
-                    pass
+                elif choice == '3':  # Edit the contact email address
+                    new_email = input("Enter the new email address: ")
+                    try:
+                        result = contact.edit_email(new_email)
+                        console.print(result, style="success")
+                    except ValueError as e:
+                        console.print(f"Error: {e}", style="error")
 
-                elif choice == '4':  # Exit from edit menu and back to contact menu
+                elif choice == '4':  # Return to the contact menu
                     break
+
                 else:
                     console.print(
                         "Invalid choice. Please try again.", style="error")
+
 
 # /////////////////////////////////EDIT MENU ///////////////////////////////////////
         elif choice == '4':  # Delete contact
@@ -412,13 +427,32 @@ if __name__ == '__main__':
             else:
                 console.print("No matching contacts found", style="warning")
 
+        # ...
+
         elif choice == '6':  # display_contacts_n_day_to birthday
-            n = int(input("Input quantity days to birthday: "))
+            try:
+                n = int(input("Input quantity days to birthday: "))
+            except ValueError:
+                console.print(
+                    "Invalid input. Please enter a valid integer.", style="error")
+                continue
+
+            nearest_birthdays = []
             for page in address_book:
                 for record in page:
-                    if record.days_to_birthday() <= n:
-                        print(record)
-                print('*' * 20)
+                    days_to_birthday = record.days_to_birthday()
+                    if days_to_birthday is not None and days_to_birthday <= n:
+                        nearest_birthdays.append((record, days_to_birthday))
+
+            if nearest_birthdays:
+                console.print("Nearest Birthdays:")
+                for record, days_to_birthday in nearest_birthdays:
+                    console.print(
+                        f"{record.name.value}'s birthday is in {days_to_birthday} days:")
+                    console.print(record)
+            else:
+                console.print(
+                    f"No birthdays within the next {n} days.", style="warning")
 
 # ///////////////////////  LOGIC FOR NOTES MENU /////////////////////////
         elif choice == '7':
