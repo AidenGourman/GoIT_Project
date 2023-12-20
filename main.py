@@ -1,8 +1,6 @@
 from _collections_abc import Iterator
 from datetime import datetime
 from collections import UserDict
-from faker import Faker
-import random
 import pickle
 import os
 import re
@@ -18,7 +16,7 @@ custom_theme = Theme(
     {"success": "bold green", "error": "bold red", "warning": "bold yellow"})
 console = Console(theme=custom_theme)
 
-
+# Parrent class for all fields
 class Field:
     def __init__(self, value=None):
         self.__value = None
@@ -35,7 +33,7 @@ class Field:
     def __repr__(self):
         return f"{self.__class__.__name__}({self.value})"
 
-
+# Class for contact name, allow letters and space characters
 class Name(Field):
     @Field.value.setter
     def value(self, value: str):
@@ -44,18 +42,17 @@ class Name(Field):
         else:
             raise ValueError('Name should include only letter characters')
 
-
+# Class for contact birthday date  allow "YYYY-MM-DD" format
 class Birthday(Field):
     @Field.value.setter
     def value(self, value=None):
         if value:
             try:
-                self._Field__value = datetime.strptime(
-                    value, '%Y-%m-%d').date()
+                self._Field__value = datetime.strptime(value, '%Y-%m-%d').date()
             except Exception:
                 raise ValueError("Date should be in the format YYYY-MM-DD")
 
-
+# Class for contact phone with checking according UA providers
 class Phone(Field):
     @Field.value.setter
     def value(self, value):
@@ -65,7 +62,7 @@ class Phone(Field):
         else:
             raise ValueError('Phone is not valid')
 
-
+# Class for contact email, allow format for more common email addresses
 class Email(Field):
     @Field.value.setter
     def value(self, value):
@@ -76,21 +73,19 @@ class Email(Field):
         else:
             raise ValueError("Email is not valid")
 
-
+# Class for contact address, allow any string
 class Address(Field):
     @Field.value.setter
     def value(self, value):
         self._Field__value = value
 
-
+# Class for contact notes, any string
 class Note(Field):
-    def __init__(self, value):
-        super().__init__(value)
+    @Field.value.setter
+    def value(self, value):
+        self._Field__value = value
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.value})"
-
-
+# Class for contacts main information
 class Record:
     def __init__(self, name, phone, birthday, email, notes=None, address=None) -> None:
         self.name = Name(name)
@@ -101,6 +96,7 @@ class Record:
         self.address = Address(address)
         self.notes = [Note(notes)] if notes else []
 
+# Methods for phone processing
     def add_phone(self, phone_number):
         phone = Phone(phone_number)
         if phone not in self.phones:
@@ -113,57 +109,35 @@ class Record:
                 self.phones.remove(i)
                 return "phone is removed"
 
-    def edit_phone(self, old_phone, new_phone):
-        if not self.find_phone(old_phone):
-            raise ValueError
-        for i, phone in enumerate(self.phones):
-            if phone.value == old_phone:
-                new_phone_obj = Phone(new_phone)
-                self.phones[i] = new_phone_obj
-
-    def find_phone(self, phone_number):
-        phone = Phone(phone_number)
-        for i in self.phones:
-            if i.value == phone.value:
-                return i.value
-        return None
-
+# Methods for email changing
     def edit_email(self, new_email):
         new_email = Email(new_email)
         self.email = new_email
         return f"email:{self.email.value}"
 
+# Methods for notes processing
     def show_notes(self):
-        return f'Notes: {"; ".join(str(note) for note in self.notes) if self.notes else "No notes"}'
+        return f'Notes: {"; ".join(note.value for note in self.notes) if self.notes else "No notes"}'
 
     def find_note(self, keyword):
-        matching_notes = [
-            str(note) for note in self.notes if keyword.lower() in str(note).lower()]
+        matching_notes = [note.value for note in self.notes if keyword.lower() in note.value.lower()]
         return matching_notes
-
-    def add_note(self, note_value, tags=None):
-        new_note = Note(note_value, tags)
-        self.notes.append(new_note)
-        return f'notes: {"; ".join(str(note) for note in self.notes) if self.notes else "N/A"}'
-
-    def edit_note(self, keyword, new_note_value, new_tags=None):
-        for note in self.notes:
-            if keyword.lower() in str(note).lower():
-                note.edit_value(new_note_value)
-                if new_tags is not None:
-                    note.tags = new_tags
-                return f"Note edited: {keyword} -> {note}, tags: {note.tags}"
-        else:
-            raise ValueError("Note not found.")
-
+    
     def delete_note(self, keyword):
         for note in self.notes:
-            if keyword.lower() in str(note).lower():
+            if keyword.lower() in note.value.lower():
                 self.notes.remove(note)
                 return f"Note deleted, notes: {self.show_notes()}"
-        else:
-            raise ValueError("Note not found.")
-        
+            else:
+                raise ValueError("Note not found.")
+
+    def add_note(self, note_value, tags=None):
+        new_note = Note(f"#{tags} {note_value}" if tags else f'{note_value}')
+        self.notes.append(new_note)
+        return f'notes: {"; ".join(note.value for note in self.notes) if self.notes else "N/A"}'    
+ 
+
+# Methods for tags processing        
     def add_tag_to_note(self, keyword, tag):
         for note in self.notes:
             if keyword.lower() in str(note).lower():
@@ -190,6 +164,7 @@ class Record:
         else:
             raise ValueError("Note not found.")
 
+# Methods defines days to birthdays of the contact
     def days_to_birthday(self):
         if self.birthday:
             date_now = datetime.now().date()
@@ -207,10 +182,9 @@ class Record:
             f"Birthday: {self.birthday.value if self.birthday else 'N/A'} || "
             f"Email: {self.email.value if self.email else 'N/A'} || "
             f"Address: {self.address.value if self.address and self.address.value else 'N/A'} || "
-            f"Notes: {'; '.join(str(note) for note in self.notes) if self.notes else 'N/A'} || "
-            f"To_birthday: {self.days_to_birthday()}")
+            f"Notes: {'; '.join(note.value for note in self.notes) if self.notes else 'N/A'} || ")
 
-
+# Class store all contacts and main logic contacts processing
 class AddressBook(UserDict):
     def add_record(self, record: Record):  # add record in dictionary
         key = record.name.value
@@ -250,23 +224,7 @@ class AddressBook(UserDict):
         else:
             raise ValueError("Contact not found.")
 
-    # generate records for address_book
-    def generate_random_contacts(self, n=10):
-        fake = Faker()
-        for i in range(n+1):
-            name = fake.name()
-            # random phone numbers according pattern (r"^0[3456789]\d{8}$")
-            phone = f'{0}{random.choice("3456789")}{random.randint(10**7,10**8-1)}'
-            birthday = fake.date_of_birth(
-                minimum_age=18, maximum_age=60).strftime('%Y-%m-%d')
-            email = fake.email()
-            notes = fake.text()
-            address = fake.address()
-            record = Record(name, phone, birthday, email, notes, address)
-            self.add_record(record)
-        self.save_to_file(filename)
-        print('AddressBook records are generated and saved')
-
+# Methods for user interaction, to retrieve contact record
     def validate_input(self, prompt, validation_func):
         while True:
             user_input = input(prompt)
@@ -277,28 +235,23 @@ class AddressBook(UserDict):
                 print(f"Error: {e}")
 
     def get_contact(self):
-        name = self.validate_input("\nEnter name: ", lambda x: Name(x))
-        address = self.validate_input(
-            "\nEnter Address: ", lambda x: Address(x))
+        name = self.validate_input("Enter name: ", lambda x: Name(x))
+        address = self.validate_input("Enter Address: ", lambda x: Address(x))
         phone = self.validate_input("Enter phone: ", lambda x: Phone(x))
         email = self.validate_input("Enter email: ", lambda x: Email(x))
-        birthday = self.validate_input(
-            "Enter birthday (YYYY-MM-DD): ", lambda x: Birthday(x))
-        note = self.validate_input("\nEnter note: ", lambda x: Note(x))
+        birthday = self.validate_input("Enter birthday (YYYY-MM-DD): ", lambda x: Birthday(x))
+        note = self.validate_input("Enter note: ", lambda x: Note(x))
         return Record(name, phone, birthday, email, note, address)
 
-# //////////////////// NOTe LOGIC ///////////////////
-
-# //////////////////// NOTe LOGIC ///////////////////
-
+# Method for page view of the contact list
     def __iter__(self) -> Iterator:
         # Iterable class
-        return AddressBookIterator(self.data.values(), page_size=2)
+        return AddressBookIterator(self.data.values(), page_size=1)
 
     def __repr__(self):
         return f"AddressBook({self.data})"
 
-
+# Class iterator
 class AddressBookIterator:
     def __init__(self, records_list, page_size):
         self.records = list(records_list)
@@ -332,94 +285,94 @@ if __name__ == '__main__':
             address_book.restore_from_file(filename)
     except Exception:
         f'First run, will be create file'
-#       address_book.generate_random_contacts()
+
     for i in track(range(5), description="Loading data..."):
         print(f"loading {i}")
         time.sleep(0.5)
     while True:
-        print("\nMenu:")
-        print("-" * 45)
+        print(f'{"-" * 17}Menu:{"-" * 19}')
         print("1. Add contact  | 2. Display all contacts")
         print("3. Edit contact | 4. Delete contact")
         print("5. Find contact | 6. Find the nearest birthday")
-        print("-" * 45)
-        print("7. Note menu")
-        print("-" * 12)
-        print("8. Save & Exit")
-
+        print("7. Note menu    | 8. Sort directory")
+        print("9. Save & Exit  |")
+        print(f'{"-" * 41}')
         choice = input("\nChoose an option: ")
 
-        if choice == '1':
+        if choice == '1': # add contact 
             address_book.add_record(address_book.get_contact())
             console.print('Contact added successfully', style="success")
 
-        elif choice == '2':
+        elif choice == '2':  # display all contacts
             for page in address_book:
                 for record in page:
                     print(record)
-                    print(record.days_to_birthday())
-            print('-' * 45)
-# /////////////////////////////////EDIT MENU ///////////////////////////////////////
-        elif choice == '3':
+# /////////////////////////////////CONTACT EDIT MENU 
+        elif choice == '3': 
             while True:
-                print("\nEdit menu:")
-                print("-" * 45)
-                print("1. Edit whole contact")
-                print("2. Edit contact phone number")
-                print("3. Edit contact mail")
-                print("4. Return to contact menu")
-                print("-" * 45)
-
+                print(f'{"-" * 17}Contact edit menu:{"-" * 19}')
+                print("1. Edit whole contact | 2. Edit email")
+                print("3. Add phone          | 4. Delete phone")
+                print("5. Return ")
+                print(f'{"-" * 41}')
                 choice = input("\nChoose an option: ")
-
+               
                 if choice == '1':  # Edit whole contact
-                    pass
+                    contact = input("Input whose contact to edit: ")
+                    record =  address_book.data.get(contact)
+                    if record:
+                        address_book.data[contact] = address_book.get_contact()
+                        console.print('Contact modified and saved', style="success")
+                
+                elif choice == '2':  # Edit email
+                    contact = input("Input whose email to change: ")
+                    record = address_book.get(contact)
+                    if record:
+                        new_email = input("Input new email: ")
+                        record.edit_email(new_email)
+                        console.print('Email modified and saved', style="success")
 
-                elif choice == '2':  # Edit contact phone number
-                    pass
+                        
+                elif choice == '3':  # Add phone 
+                    contact = input("Input whose phone add: ")
+                    record = address_book.data.get(contact)
+                    if record:
+                        print(record.phones)                        
+                        new_phone = input("Input new phone: ")
+                        record.add_phone(new_phone)
+                        console.print('Phone modified and saved', style="success")
+                
+                elif choice == '4':  # Delete phone
+                    contact = input("Input whose phone delete: ")
+                    record = address_book.data.get(contact)
+                    if record:
+                        print(record.phones)
+                        new_phone = input("Input phone to delete: ")
+                        record.remove_phone(new_phone)
+                        console.print('Phone was removed', style="success")                    
 
-                elif choice == '3':  # Edit contact mail
-                    pass
-
-                elif choice == '4':  # Exit from edit menu and back to contact menu
-                    break
+                elif choice == '5':  # Exit from edit menu and back to contact menu
+                    break                
                 else:
-                    console.print(
-                        "Invalid choice. Please try again.", style="error")
+                    console.print("Invalid choice. Please try again.", style="error")
 
-# /////////////////////////////////EDIT MENU ///////////////////////////////////////
+# ////////////////////////////////////END CONTACT EDIT MENU 
         elif choice == '4':  # Delete contact
             contact_name = input("Enter contact name to delete: ")
-            try:
-                address_book.delete(contact_name)
-                console.print(
-                    f"Contact '{contact_name}' deleted successfully", style="success")
-            except KeyError:
-                console.print(
-                    f"Contact '{contact_name}' not found", style="error")
+            del address_book.data[contact_name]
+            console.print('Contact was removed', style="success")  
 
         elif choice == '5':  # Find contact
-            search_query = input(
-                "Enter a name or phone number to search: ").lower()
-
-            # Search for contacts
-            search_result = address_book.search(search_query)
-
-            if search_result:
-                console.print("Search result:")
-                for result in search_result:
-                    console.print(result)
-            else:
-                console.print("No matching contacts found", style="warning")
+            contact = input("Enter contact name to find: ")
+            print(address_book.data.get(contact))
 
         elif choice == '6':  # display_contacts_n_day_to birthday
             n = int(input("Input quantity days to birthday: "))
             for page in address_book:
                 for record in page:
-                    if record.days_to_birthday() <= n:
-                        print(record)
-                print('*' * 20)
-
+                    m = record.days_to_birthday()
+                    if m <= n:
+                        console.print(f"To {record.name.value}s birthday {m} days", style='success')
 # ///////////////////////  LOGIC FOR NOTES MENU /////////////////////////
         elif choice == '7':
             while True:
@@ -489,13 +442,12 @@ if __name__ == '__main__':
                 else:
                     console.print(
                         "Invalid choice. Please try again.", style="error")
-
-
-# ^^^^^///////////////////////  LOGIC FOR NOTES MENU /////////////////////////^^^^^^
-        elif choice == '8':
+# /////////////////////////// END NOTES MENU 
+                    
+        elif choice == '6':  # sort folder  
+            pass
+        elif choice == '9':
             address_book.save_to_file(filename)
             console.print(
                 f'Contactbook saved, have a nice day! :D', style="success")
             break
-        else:
-            console.print("Invalid choice. Please try again.", style="error")
