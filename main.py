@@ -84,24 +84,11 @@ class Address(Field):
 
 
 class Note(Field):
-    def __init__(self, value, tags=None):
+    def __init__(self, value):
         super().__init__(value)
-        self.tags = tags or []
-
-    def add_tag(self, tag):
-        self.tags.append(tag)
-
-    def remove_tag(self, tag):
-        if tag in self.tags:
-            self.tags.remove(tag)
-        else:
-            raise ValueError(f"Tag {tag} not found.")
-
-    def has_tag(self, tag):
-        return tag in self.tags
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.value}, {self.tags})"
+        return f"{self.__class__.__name__}({self.value})"
 
 
 class Record:
@@ -174,6 +161,32 @@ class Record:
             if keyword.lower() in str(note).lower():
                 self.notes.remove(note)
                 return f"Note deleted, notes: {self.show_notes()}"
+        else:
+            raise ValueError("Note not found.")
+        
+    def add_tag_to_note(self, keyword, tag):
+        for note in self.notes:
+            if keyword.lower() in str(note).lower():
+                note.add_tag(tag)
+                return f"Tag '{tag}' added to note '{keyword}': {note}"
+        else:
+            raise ValueError("Note not found.")
+
+    def remove_tag_from_note(self, keyword, tag):
+        for note in self.notes:
+            if keyword.lower() in str(note).lower():
+                try:
+                    note.remove_tag(tag)
+                    return f"Tag '{tag}' removed from note '{keyword}': {note}"
+                except ValueError as e:
+                    raise ValueError(f"Error: {e}")
+        else:
+            raise ValueError("Note not found.")
+
+    def has_tag_in_note(self, keyword, tag):
+        for note in self.notes:
+            if keyword.lower() in str(note).lower():
+                return note.has_tag(tag)
         else:
             raise ValueError("Note not found.")
 
