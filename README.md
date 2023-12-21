@@ -1,84 +1,28 @@
 # RemindMe
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+RemindMe is an application that will help you record, save and edit your contacts in your phone book, as well as take notes and a brief description of them. And also as a bonus, you will have your own sorter that will sort your files by type, indicating the folder you need for this!
 
 ##  How to install
 
 
 ##  For macOS users
 
-Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
-
+### Running the command in the console
 ```bash
-pip install foobar
+python3 main.py
 ```
-
-## Usage
-
-```python
-import foobar
-
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
-```
-
 ##  For Windows users
-
-Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
-
 ```bash
-pip install foobar
+python3 main.py
 ```
-
-## Usage
-
-```python
-import foobar
-
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
-```
-
 ##  For Linux users
-
-Pull requests are welcome. For major changes, please open an issue first
-to discuss what you would like to change.
-
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
-
 ```bash
-pip install foobar
+python3 main.py
 ```
-
 ## Usage
 
-```python
-import foobar
+![menu1](https://github.com/AidenGourman/RemindMe/assets/118489118/699d254b-c5b9-4b8e-bedb-d650324e6969)
 
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
+Thanks to the interactive menu you will see which function can be entered.
+In order to launch the sorter, you need to go to the main contacts menu and select option number 8
