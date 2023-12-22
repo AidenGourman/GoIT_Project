@@ -26,3 +26,7 @@ python3 main.py
 
 Thanks to the interactive menu you will see which function can be entered.
 In order to launch the sorter, you need to go to the main contacts menu and select option number 8
+
+### Example of using the sorter
+
+![tg_image_3059642608](https://github.com/AidenGourman/RemindMe/assets/118489118/a4323396-c9cf-4cf0-8353-0826a890defd)
