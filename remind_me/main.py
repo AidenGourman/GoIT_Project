@@ -13,10 +13,12 @@ from rich.theme import Theme
 from rich.progress import track
 
 custom_theme = Theme(
-    {"success": "bold green", "error": "bold red", "warning": "bold yellow", "menu": "yellow", "row":"bright_blue", "note":"bold magenta"})
+    {"success": "bold green", "error": "bold red", "warning": "bold yellow", "menu": "yellow", "row": "bright_blue", "note": "bold magenta"})
 console = Console(theme=custom_theme)
 
 # Parrent class for all fields
+
+
 class Field:
     def __init__(self, value=None):
         self.__value = None
@@ -34,6 +36,8 @@ class Field:
         return f"{self.__class__.__name__}({self.value})"
 
 # Class for contact name, allow letters and space characters
+
+
 class Name(Field):
     @Field.value.setter
     def value(self, value: str):
@@ -43,16 +47,21 @@ class Name(Field):
             raise ValueError('Name should include only letter characters')
 
 # Class for contact birthday date  allow "YYYY-MM-DD" format
+
+
 class Birthday(Field):
     @Field.value.setter
     def value(self, value=None):
         if value:
             try:
-                self._Field__value = datetime.strptime(value, '%Y-%m-%d').date()
+                self._Field__value = datetime.strptime(
+                    value, '%Y-%m-%d').date()
             except Exception:
                 raise ValueError("Date should be in the format YYYY-MM-DD")
 
 # Class for contact phone with checking according UA providers
+
+
 class Phone(Field):
     @Field.value.setter
     def value(self, value):
@@ -63,6 +72,8 @@ class Phone(Field):
             raise ValueError('Phone is not valid')
 
 # Class for contact email, allow format for more common email addresses
+
+
 class Email(Field):
     @Field.value.setter
     def value(self, value):
@@ -74,18 +85,24 @@ class Email(Field):
             raise ValueError("Email is not valid")
 
 # Class for contact address, allow any string
+
+
 class Address(Field):
     @Field.value.setter
     def value(self, value):
         self._Field__value = value
 
 # Class for contact notes, any string
+
+
 class Note(Field):
     @Field.value.setter
     def value(self, value):
         self._Field__value = value
 
 # Class for contacts main information
+
+
 class Record:
     def __init__(self, name, phone, birthday, email, notes=None, address=None) -> None:
         self.name = Name(name)
@@ -120,9 +137,10 @@ class Record:
         return f'{"; ".join(note.value for note in self.notes) if self.notes else "No notes"}'
 
     def find_note(self, keyword):
-        matching_notes = [note.value for note in self.notes if keyword.lower() in note.value.lower()]
+        matching_notes = [
+            note.value for note in self.notes if keyword.lower() in note.value.lower()]
         return matching_notes[0] if matching_notes else "Note not found."
-    
+
     def delete_note(self, keyword):
         for note in self.notes:
             if keyword.lower() in note.value:
@@ -152,7 +170,7 @@ class Record:
                 note.value = f"{note.value.split('#')[0]}#{tags}"
                 return f"Tag was added"
         return f"Tag not found"
-    
+
     def remove_tag(self, keyword, tag):
         for note in self.notes:
             if keyword.lower() in note.value:
@@ -163,12 +181,13 @@ class Record:
                     note.value = f"{note.value.split('#')[0]}#{tags}"
                     return f"Tag was removed from the note"
         return f"Tag not found"
-    
+
     def sort_notes(self):
-        sorted_notes = sorted(self.notes, key=lambda note: re.findall(r'#(\w+)', note.value))
+        sorted_notes = sorted(
+            self.notes, key=lambda note: re.findall(r'#(\w+)', note.value))
         self.notes = sorted_notes
         return sorted_notes
-    
+
 # Methods defines days to birthdays of the contact
     def days_to_birthday(self):
         if self.birthday:
@@ -190,6 +209,8 @@ class Record:
             f"Notes: {'; '.join(note.value for note in self.notes) if self.notes else 'N/A'} || ")
 
 # Class store all contacts and main logic contacts processing
+
+
 class AddressBook(UserDict):
     def add_record(self, record: Record):  # add record in dictionary
         key = record.name.value
@@ -220,10 +241,10 @@ class AddressBook(UserDict):
         for record in self.data.values():
             if (query in record.name.value.lower() or
                 any(query in phone.value for phone in record.phones) or
-                any(query in note.value.lower() for note in record.notes)):
+                    any(query in note.value.lower() for note in record.notes)):
                 results.append(record)
         return results
-    
+
 # Methods for user interaction, to retrieve contact record
     def validate_input(self, prompt, validation_func):
         while True:
@@ -237,9 +258,11 @@ class AddressBook(UserDict):
     def get_contact(self):
         name = self.validate_input("Enter name: ", lambda x: Name(x))
         address = self.validate_input("Enter Address: ", lambda x: Address(x))
-        phone = self.validate_input("Enter UA mobile phone(10 numbers, start from 0): ", lambda x: Phone(x))
+        phone = self.validate_input(
+            "Enter UA mobile phone(10 numbers, start from 0): ", lambda x: Phone(x))
         email = self.validate_input("Enter email: ", lambda x: Email(x))
-        birthday = self.validate_input("Enter birthday (YYYY-MM-DD): ", lambda x: Birthday(x))
+        birthday = self.validate_input(
+            "Enter birthday (YYYY-MM-DD): ", lambda x: Birthday(x))
         note = self.validate_input("Enter note: ", lambda x: Note(x))
         tag = self.validate_input("Input tag message: ", lambda x: Note(x))
         message = f"{note} #{tag}" if tag else f"{note}"
@@ -250,10 +273,13 @@ class AddressBook(UserDict):
         # Iterable class
         return AddressBookIterator(self.data.values(), page_size=2)
 # Methods readeble view
+
     def __repr__(self):
         return f"AddressBook({self.data})"
 
 # Class iterator
+
+
 class AddressBookIterator:
     def __init__(self, records_list, page_size):
         self.records = list(records_list)
@@ -279,6 +305,8 @@ class AddressBookIterator:
         return result
 
 # Error handler
+
+
 def error_handler(func):
     def inner(*args, **kwargs):
         try:
@@ -289,13 +317,17 @@ def error_handler(func):
             address_book.save_to_file(filename)
             print(f'Error: {e}')
     return inner
-#////////////////start_clean_function////////////////
+
+
+# ////////////////start_clean_function////////////////
+
+
 @error_handler
-def clean(folder:Path):
-    #normalize
+def clean(folder: Path):
+    # normalize
     CYRILLIC_SYMBOLS = 'абвгдеєжзіийклмнопрстуфхцчшщьюяєїґ'
     TRANSLATION = ("a", "b", "v", "h", "d", "e", "ie", "j", "z", "i", "y", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
-                "f", "kh", "ts", "ch", "sh", "shch", "", "iy", "ia", "e", "yi", "h")
+                   "f", "kh", "ts", "ch", "sh", "shch", "", "iy", "ia", "e", "yi", "h")
     ACCORD = dict()
     for cyril, latin in zip(CYRILLIC_SYMBOLS, TRANSLATION):
         ACCORD[ord(cyril)] = latin
@@ -304,22 +336,22 @@ def clean(folder:Path):
     def normalize(name: str) -> str:
         translate_name = re.sub(r'[^\w.]', '_', name.translate(ACCORD))
         return translate_name
-    #parser
+    # parser
     JPEG_IMG = []
     JPG_IMG = []
     PNG_IMG = []
     SVG_IMG = []
-    #'MP3', 'OGG', 'WAV', 'AMR'
+    # 'MP3', 'OGG', 'WAV', 'AMR'
     MP3_AUDIO = []
     OGG_AUDIO = []
     WAV_AUDIO = []
     AMR_AUDIO = []
-    #'AVI', 'MP4', 'MOV', 'MKV'
+    # 'AVI', 'MP4', 'MOV', 'MKV'
     MP4_VIDEO = []
     AVI_VIDEO = []
     MOV_VIDEO = []
     MKV_VIDEO = []
-    #'DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX, PY
+    # 'DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX, PY
     DOC_DOC = []
     DOCX_DOC = []
     TXT_DOC = []
@@ -327,7 +359,7 @@ def clean(folder:Path):
     XLSX_DOC = []
     PPTX_DOC = []
     PY_DOC = []
-    #'ZIP', 'GZ', 'TAR'
+    # 'ZIP', 'GZ', 'TAR'
     ZIP_ARCH = []
     GZ_ARCH = []
     TAR_ARCH = []
@@ -340,7 +372,7 @@ def clean(folder:Path):
         'SVG': SVG_IMG,
         'OGG': OGG_AUDIO,
         'WAV': WAV_AUDIO,
-        'AMR': AMR_AUDIO,            
+        'AMR': AMR_AUDIO,
         'MP3': MP3_AUDIO,
         'MP4': MP4_VIDEO,
         'AVI': AVI_VIDEO,
@@ -363,11 +395,12 @@ def clean(folder:Path):
     UNKNOWN = set()
 
     def get_extension(name: str) -> str:
-        return Path(name).suffix[1:].upper()  
-    #folder
+        return Path(name).suffix[1:].upper()
+    # folder
+
     def scan(folder: Path):
         for item in folder.iterdir():
-            if item.is_dir(): 
+            if item.is_dir():
                 if item.name not in ('archives', 'video', 'audio', 'documents', 'images', 'not_defined'):
                     FOLDERS.append(item)
                     scan(item)
@@ -381,7 +414,7 @@ def clean(folder:Path):
                     REGISTER_EXTENSION[extension].append(full_name)
                     EXTENSIONS.add(extension)
                 except KeyError:
-                    UNKNOWN.add(extension) 
+                    UNKNOWN.add(extension)
                     NOT_DEFINED.append(full_name)
 
     def handle_media(file_name: Path, target_folder: Path):
@@ -390,10 +423,12 @@ def clean(folder:Path):
 
     def handle_archive(file_name: Path, target_folder: Path):
         target_folder.mkdir(exist_ok=True, parents=True)
-        folder_for_file = target_folder / normalize(file_name.name.replace(file_name.suffix, ''))
+        folder_for_file = target_folder / \
+            normalize(file_name.name.replace(file_name.suffix, ''))
         folder_for_file.mkdir(exist_ok=True, parents=True)
         try:
-            shutil.unpack_archive(str(file_name.absolute()), str(folder_for_file.absolute()))
+            shutil.unpack_archive(str(file_name.absolute()),
+                                  str(folder_for_file.absolute()))
         except shutil.ReadError:
             folder_for_file.rmdir()
             return file_name.unlink()
@@ -414,33 +449,33 @@ def clean(folder:Path):
         for file in OGG_AUDIO:
             handle_media(file, folder / 'audio' / 'OGG')
         for file in WAV_AUDIO:
-            handle_media(file, folder / 'audio' / 'WAV')  
+            handle_media(file, folder / 'audio' / 'WAV')
         for file in AMR_AUDIO:
-            handle_media(file, folder / 'audio' / 'AMR')  
+            handle_media(file, folder / 'audio' / 'AMR')
 
         for file in AVI_VIDEO:
             handle_media(file, folder / 'video' / 'AVI')
         for file in MP4_VIDEO:
             handle_media(file, folder / 'video' / 'MP4')
         for file in MOV_VIDEO:
-            handle_media(file, folder / 'video' / 'MOV')                                    
+            handle_media(file, folder / 'video' / 'MOV')
         for file in MKV_VIDEO:
             handle_media(file, folder / 'video' / 'MKV')
 
         for file in DOC_DOC:
             handle_media(file, folder / 'documents' / 'DOC')
         for file in DOCX_DOC:
-            handle_media(file, folder / 'documents' / 'DOCX')        
+            handle_media(file, folder / 'documents' / 'DOCX')
         for file in TXT_DOC:
-            handle_media(file, folder / 'documents' / 'TXT')        
+            handle_media(file, folder / 'documents' / 'TXT')
         for file in PDF_DOC:
-            handle_media(file, folder / 'documents' / 'PDF')        
+            handle_media(file, folder / 'documents' / 'PDF')
         for file in XLSX_DOC:
-            handle_media(file, folder / 'documents' / 'XLSX') 
+            handle_media(file, folder / 'documents' / 'XLSX')
         for file in PPTX_DOC:
-            handle_media(file, folder / 'documents' / 'PPTX')               
+            handle_media(file, folder / 'documents' / 'PPTX')
         for file in PY_DOC:
-            handle_media(file, folder / 'documents' / 'PY')        
+            handle_media(file, folder / 'documents' / 'PY')
 
         for file in NOT_DEFINED:
             handle_media(file, folder / 'not_defined')
@@ -448,22 +483,26 @@ def clean(folder:Path):
         for file in ZIP_ARCH:
             handle_archive(file, folder / 'archives' / 'ZIP')
         for file in GZ_ARCH:
-            handle_archive(file, folder / 'archives' / 'GZ') 
+            handle_archive(file, folder / 'archives' / 'GZ')
         for file in TAR_ARCH:
-            handle_archive(file, folder / 'archives' / 'TAR')               
+            handle_archive(file, folder / 'archives' / 'TAR')
 
-        for folder in FOLDERS[::-1]: #delete empty folders
+        for folder in FOLDERS[::-1]:  # delete empty folders
             try:
                 folder.rmdir()
             except OSError:
                 print(f'Error during remove folder {folder}')
         return REGISTER_EXTENSION, UNKNOWN
-       
+
     if folder:
         folder_path = Path(folder)
         exstention, unknown = main_cleaner(folder_path)
-        return  {key: value for key, value in exstention.items() if value}, unknown 
-#/////////////End_clean_function/////////////
+        return {key: value for key, value in exstention.items() if value}, unknown
+
+
+# /////////////End_clean_function/////////////
+
+
 @error_handler
 def main():
     try:
@@ -476,35 +515,40 @@ def main():
         print(f"loading {i}")
         time.sleep(0.5)
     while True:
-        console.print(f'{"-" * 50}Main menu of contacts:{"-" * 53}', style = "row")
-        console.print("| 1. Add | 2.All contacts | 3.Edit | 4.Delete | 5.Find | 6.Birthday soon! | 7.Note menu | 8.Sort directory | 9. Save & Exit |", style = "menu")
-        console.print(f'{"-" * 125}', style = "row")
+        console.print(
+            f'{"-" * 50}Main menu of contacts:{"-" * 53}', style="row")
+        console.print(
+            "| 1. Add | 2.All contacts | 3.Edit | 4.Delete | 5.Find | 6.Birthday soon! | 7.Note menu | 8.Sort directory | 9. Save & Exit |", style="menu")
+        console.print(f'{"-" * 125}', style="row")
         choice = input("Choose an option: ")
 
-        if choice == '1': # add contact 
+        if choice == '1':  # add contact
             address_book.add_record(address_book.get_contact())
             console.print('Contact added successfully', style="success")
 
         elif choice == '2':  # display all contacts
             for page in address_book:
                 for record in page:
-                    console.print(record, style ="success")
-# //////////////////////////CONTACT EDIT MENU/////////////////////// 
-        elif choice == '3': 
+                    console.print(record, style="success")
+# //////////////////////////CONTACT EDIT MENU///////////////////////
+        elif choice == '3':
             while True:
-                console.print(f'{"-" * 30}Contact edit menu:{"-" * 33}', style = "row")
-                console.print("| 1.Edit whole contact | 2.Edit email | 3.Add phone | 4.Delete phone | 5.Return |", style = "success")
-                console.print(f'{"-" * 81}', style = "row")
+                console.print(
+                    f'{"-" * 30}Contact edit menu:{"-" * 33}', style="row")
+                console.print(
+                    "| 1.Edit whole contact | 2.Edit email | 3.Add phone | 4.Delete phone | 5.Return |", style="success")
+                console.print(f'{"-" * 81}', style="row")
                 choice = input("Choose an option: ")
-               
+
                 if choice == '1':  # Edit whole contact
                     contact = input("Input whose contact to edit: ")
-                    record =  address_book.data.get(contact)
+                    record = address_book.data.get(contact)
                     if record:
-                         del address_book.data[contact]
-                         new_reccord = address_book.get_contact()
-                         address_book.add_record(new_reccord)
-                         console.print('Contact modified and saved', style="success")
+                        del address_book.data[contact]
+                        new_reccord = address_book.get_contact()
+                        address_book.add_record(new_reccord)
+                        console.print(
+                            'Contact modified and saved', style="success")
 
                 elif choice == '2':  # Edit email
                     contact = input("Input whose email to change: ")
@@ -512,17 +556,18 @@ def main():
                     if record:
                         new_email = input("Input new email: ")
                         record.edit_email(new_email)
-                        console.print('Email modified and saved', style="success")
-                        
-                elif choice == '3':  # Add phone 
+                        console.print('Email modified and saved',
+                                      style="success")
+
+                elif choice == '3':  # Add phone
                     contact = input("Input whose phone add: ")
                     record = address_book.data.get(contact)
                     if record:
-                        print(record.phones)                        
+                        print(record.phones)
                         new_phone = input("Input new phone: ")
                         record.add_phone(new_phone)
                         console.print('Phone saved', style="success")
-                
+
                 elif choice == '4':  # Delete phone
                     contact = input("Input whose phone delete: ")
                     record = address_book.data.get(contact)
@@ -530,21 +575,22 @@ def main():
                         print(record.phones)
                         new_phone = input("Input phone to delete: ")
                         record.remove_phone(new_phone)
-                        console.print('Phone was removed', style="success")                    
+                        console.print('Phone was removed', style="success")
 
                 elif choice == '5':  # Exit from edit menu and back to contact menu
-                    break                
+                    break
                 else:
-                    console.print("Invalid choice. Please try again.", style="error")
-#///////////////////////////////////////////////////////////////////////
+                    console.print(
+                        "Invalid choice. Please try again.", style="error")
+# ///////////////////////////////////////////////////////////////////////
         elif choice == '4':  # Delete contact
             contact_name = input("Enter contact name to delete: ")
             del address_book.data[contact_name]
-            console.print('Contact was removed', style="success")  
-           
+            console.print('Contact was removed', style="success")
+
         elif choice == '5':  # Find contact
             query = input("Enter contact name, tag, or phone to find: ")
-            results = address_book.search(query)  
+            results = address_book.search(query)
             if results:
                 for result in results:
                     console.print(result, style="success")
@@ -557,13 +603,16 @@ def main():
                 for record in page:
                     m = record.days_to_birthday()
                     if m <= n:
-                        console.print(f"To {record.name.value}s birthday {m} days", style='success')
+                        console.print(
+                            f"To {record.name.value}s birthday {m} days", style='success')
 # /////////////////////// NOTES MENU /////////////////////////
         elif choice == '7':
             while True:
-                console.print(f'{"-" * 50}Note edit menu:{"-" * 61}', style = "row")
-                console.print("| 1.Add note | 2.Show notes | 3.Delete note | 4.Find note | 5.Edit note | 6.Add tag  | 7.Remove tag | 8.Sort note | 9.Return |", style="note")
-                console.print(f'{"-" * 126}', style = "row")
+                console.print(
+                    f'{"-" * 50}Note edit menu:{"-" * 61}', style="row")
+                console.print(
+                    "| 1.Add note | 2.Show notes | 3.Delete note | 4.Find note | 5.Edit note | 6.Add tag  | 7.Remove tag | 8.Sort note | 9.Return |", style="note")
+                console.print(f'{"-" * 126}', style="row")
                 choice = input("Choose an option: ")
 
                 if choice == '1':  # Add note
@@ -573,20 +622,22 @@ def main():
                         note = input("Input note: ")
                         tag = input("Input tag: ")
                         record.add_note(note, tag)
-                        console.print('Note was added', style="success")  
+                        console.print('Note was added', style="success")
 
                 elif choice == '2':  # Show all notes
                     contact = input("Input contact name: ")
                     record = address_book.data.get(contact)
                     if record:
                         console.print(record.show_notes(), style="success")
-                   
+
                 elif choice == '3':  # Delete notes
                     contact = input("Input contact name: ")
                     record = address_book.data.get(contact)
                     if record:
-                        keyword = input("Input keyword or tag of note for deletion: ")
-                        console.print(record.delete_note(keyword), style="success")
+                        keyword = input(
+                            "Input keyword or tag of note for deletion: ")
+                        console.print(record.delete_note(
+                            keyword), style="success")
 
                 elif choice == '4':  # Find note
                     contact = input("Input contact name: ")
@@ -594,69 +645,74 @@ def main():
                     if record:
                         keyword = input("Input keyword or tag for search: ")
                         result = record.find_note(keyword)
-                        console.print(result, style="success")                                        
+                        console.print(result, style="success")
 
                 elif choice == '5':  # Edit note
                     contact = input("Input contact name: ")
                     record = address_book.data.get(contact)
                     if record:
-                        keyword = input("Input keyword or tag of note to edit: ")
+                        keyword = input(
+                            "Input keyword or tag of note to edit: ")
                         note = input("Input new note: ")
                         tag = input("Input new tag: ")
-                        console.print(record.edit_note(keyword, note, tag), style="success") 
-                
+                        console.print(record.edit_note(
+                            keyword, note, tag), style="success")
+
                 elif choice == '6':  # Add tag
                     contact = input("Input contact name: ")
                     keyword = input("Input keyword or tag of note to edit: ")
                     tag = input("Input tag to add: ")
                     record = address_book.data.get(contact)
                     if record:
-                        console.print(record.add_tag(keyword, tag), style="success")
-                
+                        console.print(record.add_tag(
+                            keyword, tag), style="success")
+
                 elif choice == '7':  # Remove tag
                     contact = input("Input contact name: ")
                     record = address_book.data.get(contact)
                     if record:
-                        keyword = input("Input keyword or tag of note to remove tag: ")
+                        keyword = input(
+                            "Input keyword or tag of note to remove tag: ")
                         tag = input("Input tag to remove: ")
-                        console.print(record.remove_tag(keyword, tag), style="success")
-                
+                        console.print(record.remove_tag(
+                            keyword, tag), style="success")
+
                 elif choice == '8':  # Sort notes via tag keyword
                     contact = input("Input contact name: ")
                     record = address_book.data.get(contact)
                     if record:
                         sorted_notes = record.sort_notes()
                         for note in sorted_notes:
-                                console.print(note.value, style="success")
+                            console.print(note.value, style="success")
 
                 elif choice == '9':  # Exit from note menu and back to contact menu
                     break
                 else:
-                    console.print("Invalid choice. Please try again.", style="error")
+                    console.print(
+                        "Invalid choice. Please try again.", style="error")
 # /////////////////////////// END NOTES MENU//////////////////////////////
-        elif choice == '8':  # sort folder  
+        elif choice == '8':  # sort folder
             folder = input("Enter folder path to sort: ")
             ext_find, unknown = clean(folder)
             exten_list = ', '.join(ext_find.keys())
 
-            console.print(f"Directory was sorted, extensions: {exten_list}, files:", style="note")
+            console.print(
+                f"Directory was sorted, extensions: {exten_list}, files:", style="note")
             for item in ext_find.items():
                 file_name_match = re.search(r'[^\/]+$', str(item))
                 file_name = file_name_match.group() if file_name_match else None
-                console.print(re.sub(r'\'\)\]\)', '', file_name), style="success")
+                console.print(re.sub(r'\'\)\]\)', '',
+                              file_name), style="success")
             console.print(f'{unknown}', style="note")
-        
+
         elif choice == '9':
             address_book.save_to_file(filename)
-            console.print(f'Contactbook saved, have a nice day! :D', style="success")
+            console.print(
+                f'Contactbook saved, have a nice day! :D', style="success")
             break
-def run():
-    address_book = AddressBook()  # create object
-    filename = 'contacts.pkl'
-    main()
 
-if __name__ == '__main__': 
+
+if __name__ == '__main__':
     address_book = AddressBook()  # create object
     filename = 'contacts.pkl'
     main()
-    
